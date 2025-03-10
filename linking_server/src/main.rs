@@ -1,5 +1,7 @@
-use std::{io::{BufRead, BufReader, Write}, net::{TcpListener, TcpStream}};
-use std::collections::HashMap;
+use std::{
+    io::{BufRead, BufReader, Write},
+    net::{TcpListener, TcpStream},
+};
 
 #[derive(Debug, PartialEq)]
 enum StreamReadState {
@@ -9,30 +11,28 @@ enum StreamReadState {
     COMPLETE,
 }
 
-
 fn main() {
     run_server();
 }
 
-
 fn run_server() {
-    let mut mapping: HashMap<String, String> = HashMap::new();
+    //let mut mapping: HashMap<String, String> = HashMap::new();
     let listener = TcpListener::bind("127.0.0.1:7777").unwrap();
     println!("Linking Server is listening on localhost port 7777");
 
-    for mut stream in listener.incoming(){
+    for stream in listener.incoming() {
         match stream {
-            Ok(mut stream) => {
+            Ok(stream) => {
                 handle_client(stream);
-            },
+            }
             Err(e) => {
                 eprintln!("Connection encountered an error: {}", e);
-            },
+            }
         }
     }
 }
 
-fn handle_client(mut stream: TcpStream) -> (Vec<String>, Vec<String>){
+fn handle_client(mut stream: TcpStream) -> (Vec<String>, Vec<String>) {
     // Create vectors for our distributing and requesting data
     let mut distributing: Vec<String> = Vec::new();
     let mut receiving: Vec<String> = Vec::new();
@@ -47,39 +47,39 @@ fn handle_client(mut stream: TcpStream) -> (Vec<String>, Vec<String>){
 
     // Process data into our Vectors
     println!("-----------------------------");
-    let mut readState = StreamReadState::INITIAL;
-    for line in data{
-        println!("State: {:#?} Line {line}", readState);
-        match readState {
+    let mut read_state = StreamReadState::INITIAL;
+    for line in data {
+        println!("State: {:#?} Line {line}", read_state);
+        match read_state {
             StreamReadState::INITIAL => {
                 // Todo: Check state of request header to ensure protocol is correct, for now assume it is and more on
                 if line == "#D" {
-                    readState = StreamReadState::DISTRIBUTING;
+                    read_state = StreamReadState::DISTRIBUTING;
                 }
                 continue;
-            },
+            }
             StreamReadState::DISTRIBUTING => {
                 if line == "#R" {
-                    readState = StreamReadState::REQUESTING;
-                }else{
+                    read_state = StreamReadState::REQUESTING;
+                } else {
                     distributing.push(line.clone());
                 }
                 continue;
-            },
+            }
             StreamReadState::REQUESTING => {
                 if line == "#E" {
-                    readState = StreamReadState::COMPLETE;
-                }else{
+                    read_state = StreamReadState::COMPLETE;
+                } else {
                     receiving.push(line.clone());
                 }
                 continue;
-            },
+            }
             StreamReadState::COMPLETE => {
                 continue;
-            },
+            }
         }
     }
-    if readState != StreamReadState::COMPLETE {
+    if read_state != StreamReadState::COMPLETE {
         panic!("Stream read state did not reach COMPLETE state");
     }
 
