@@ -8,6 +8,7 @@ use std::{
 #[derive(Debug, PartialEq)]
 enum StreamReadState {
     INITIAL,
+    ADDRESS,
     DISTRIBUTING,
     REQUESTING,
     COMPLETE,
@@ -18,9 +19,6 @@ fn main() {
 }
 
 fn run_server() {
-    // Get our linker
-    let linker = linker::Linker::instance();
-
     //let mut mapping: HashMap<String, String> = HashMap::new();
     let listener = TcpListener::bind("127.0.0.1:7777").unwrap();
     println!("Linking Server is listening on localhost port 7777");
@@ -28,15 +26,7 @@ fn run_server() {
     for stream in listener.incoming() {
         match stream {
             Ok(stream) => {
-                let (distributing, receiving) = handle_client(stream);
-                println!("Distributing: ");
-                for data in distributing {
-                    println!("{} ", data);
-                }
-                println!("\nReceiving: ");
-                for data in receiving {
-                    println!("{} ", data);
-                }
+                handle_client(stream);
             }
             Err(e) => {
                 eprintln!("Connection encountered an error: {}", e);
@@ -45,10 +35,11 @@ fn run_server() {
     }
 }
 
-fn handle_client(mut stream: TcpStream) -> (Vec<String>, Vec<String>) {
+fn handle_client(mut stream: TcpStream) {
     // Create vectors for our distributing and requesting data
     let mut distributing: Vec<String> = Vec::new();
-    let mut receiving: Vec<String> = Vec::new();
+    let mut requesting: Vec<String> = Vec::new();
+    let mut address: String = String::new();
 
     //Collect our data from incoming stream
     let reader = BufReader::new(&mut stream);
@@ -64,7 +55,14 @@ fn handle_client(mut stream: TcpStream) -> (Vec<String>, Vec<String>) {
         match read_state {
             StreamReadState::INITIAL => {
                 // Todo: Check state of request header to ensure protocol is correct, for now assume it is and more on
-                if line == "#D" {
+                if line.starts_with("#S") {
+                    read_state = StreamReadState::ADDRESS;
+                }
+                continue;
+            }
+            StreamReadState::ADDRESS => {
+                if line.starts_with("#A"){ // Parse out the address
+                    address.push_str(line.split_at(3).1);
                     read_state = StreamReadState::DISTRIBUTING;
                 }
                 continue;
@@ -81,7 +79,7 @@ fn handle_client(mut stream: TcpStream) -> (Vec<String>, Vec<String>) {
                 if line == "#E" {
                     read_state = StreamReadState::COMPLETE;
                 } else {
-                    receiving.push(line.clone());
+                    requesting.push(line.clone());
                 }
                 continue;
             }
@@ -90,13 +88,27 @@ fn handle_client(mut stream: TcpStream) -> (Vec<String>, Vec<String>) {
             }
         }
     }
+
     if read_state != StreamReadState::COMPLETE {
         panic!("Stream read state did not reach COMPLETE state");
+    }
+
+    // Acquire write lock on linker to deposit our data
+    let linker = linker::Linker::instance();
+    {
+        let mut lock = linker.write().unwrap();
+        lock.add_distributing(address.clone(), distributing);
+        lock.add_requesting(address.clone(), requesting);
+    }
+
+    // Acquire read lock on linker to find out what we need to send back
+    {
+        
     }
 
     // Send our response indicating completion
     let response = format!("HTTP/1.1 200 OK\r\n\r\nReceived Data\r\n");
     stream.write_all(response.as_bytes()).unwrap();
     println!("Processed Request");
-    return (distributing, receiving);
 }
+

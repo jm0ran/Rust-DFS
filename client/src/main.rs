@@ -9,11 +9,15 @@ const TARGET: &str = "127.0.0.1:7777";
  * Constructs a request to send to the server
  * @param distributing: &Vec<String> - A vector of strings containing the files to distribute
  * @param requesting: &Vec<String> - A vector of strings containing the files to request
+ * @param source: IP address of the source with the port, this isn't the IP connected to the listener server but the port used for file transfer between clients, broadcast adressy
  * @return Vec<String> - A vector of strings containing the request
  */
-fn construct_request(distributing: &Vec<String>, requesting: &Vec<String>) -> Vec<String> {
+fn construct_request(distributing: &Vec<String>, requesting: &Vec<String>, source: String) -> Vec<String> {
     let mut response: Vec<String> = Vec::new();
     response.push(String::from("#S RDFS 0.1 DISCOVERY_POST\n"));
+
+    // Add the source IP address to the request
+    response.push(format!("#A {}\n", source));
 
     // Add all distributing files to the request
     response.push(String::from("#D\n"));
@@ -58,7 +62,7 @@ fn main() {
     requesting.push(String::from("TEMPORARY REQUEST VALUE"));
 
     // Construct the request
-    let request = construct_request(&distributing, &requesting);
+    let request = construct_request(&distributing, &requesting, String::from("127.0.0.1:8888"));
 
     // Send the request
     send_request(request);
