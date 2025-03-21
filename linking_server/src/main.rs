@@ -1,3 +1,5 @@
+mod linker;
+
 use std::{
     io::{BufRead, BufReader, Write},
     net::{TcpListener, TcpStream},
@@ -16,6 +18,9 @@ fn main() {
 }
 
 fn run_server() {
+    // Get our linker
+    let linker = linker::Linker::instance();
+
     //let mut mapping: HashMap<String, String> = HashMap::new();
     let listener = TcpListener::bind("127.0.0.1:7777").unwrap();
     println!("Linking Server is listening on localhost port 7777");
@@ -23,7 +28,15 @@ fn run_server() {
     for stream in listener.incoming() {
         match stream {
             Ok(stream) => {
-                handle_client(stream);
+                let (distributing, receiving) = handle_client(stream);
+                println!("Distributing: ");
+                for data in distributing {
+                    println!("{} ", data);
+                }
+                println!("\nReceiving: ");
+                for data in receiving {
+                    println!("{} ", data);
+                }
             }
             Err(e) => {
                 eprintln!("Connection encountered an error: {}", e);
@@ -46,10 +59,8 @@ fn handle_client(mut stream: TcpStream) -> (Vec<String>, Vec<String>) {
         .collect();
 
     // Process data into our Vectors
-    println!("-----------------------------");
     let mut read_state = StreamReadState::INITIAL;
     for line in data {
-        println!("State: {:#?} Line {line}", read_state);
         match read_state {
             StreamReadState::INITIAL => {
                 // Todo: Check state of request header to ensure protocol is correct, for now assume it is and more on
@@ -86,5 +97,6 @@ fn handle_client(mut stream: TcpStream) -> (Vec<String>, Vec<String>) {
     // Send our response indicating completion
     let response = format!("HTTP/1.1 200 OK\r\n\r\nReceived Data\r\n");
     stream.write_all(response.as_bytes()).unwrap();
+    println!("Processed Request");
     return (distributing, receiving);
 }
