@@ -1,6 +1,6 @@
+use std::io::Read;
 use std::io::Write;
 use std::net::{Shutdown, TcpStream};
-use std::io::Read;
 
 mod file_ops;
 
@@ -14,7 +14,11 @@ const TRANSFER_SERVER: &str = "127.0.0.1:7779";
  * @param source: IP address of the source with the port, this isn't the IP connected to the listener server but the port used for file transfer between clients, broadcast address
  * @return Vec<String> - A vector of strings containing the request
  */
-fn construct_request(distributing: &Vec<String>, requesting: &Vec<String>, source: String) -> Vec<String> {
+fn construct_request(
+    distributing: &Vec<String>,
+    requesting: &Vec<String>,
+    source: String,
+) -> Vec<String> {
     let mut response: Vec<String> = Vec::new();
     response.push(String::from("#S RDFS 0.1 DISCOVERY_POST\n"));
 
@@ -53,7 +57,7 @@ fn send_request(request: Vec<String>) {
 
     // Our request is complete and we can shut down the write stream
     stream.shutdown(Shutdown::Write).unwrap();
-    
+
     // Read the response from the server
     let mut response = String::new();
     stream.read_to_string(&mut response).unwrap();

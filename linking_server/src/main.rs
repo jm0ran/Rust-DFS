@@ -37,7 +37,7 @@ fn run_server() {
 
 fn get_response(distributing: Vec<String>, requesting: Vec<String>, source: String) -> String {
     let linker = linker::Linker::instance();
-    
+
     // First we want to register this client as a supplier for the files it is distributing
     {
         // Get our write lock on the linker
@@ -75,14 +75,16 @@ fn handle_client(mut stream: TcpStream) {
                 continue;
             }
             StreamReadState::ADDRESS => {
-                if line.starts_with("#A"){ // Parse out the address
+                if line.starts_with("#A") {
+                    // Parse out the address
                     address.push_str(line.split_at(3).1);
                     read_state = StreamReadState::DISTRIBUTING;
                 }
                 continue;
             }
             StreamReadState::DISTRIBUTING => {
-                if line == "#D" {  // We don't need to capture this line
+                if line == "#D" {
+                    // We don't need to capture this line
                     continue;
                 }
                 if line == "#R" {
@@ -111,9 +113,8 @@ fn handle_client(mut stream: TcpStream) {
     }
 
     // Send our response indicating completion
-    let response = get_response(distributing, requesting, address);
+    let response = get_response(distributing, requesting, address.clone());
     stream.write_all(response.as_bytes()).unwrap();
-    
-    println!("Processed Request");
-}
 
+    println!("Processed Request From: {}", &address);
+}

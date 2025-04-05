@@ -3,7 +3,10 @@
  * When web server is set up to be multithreaded it will be critical that this component is thread safe
  */
 
-use std::{collections::HashMap, collections::HashSet, sync::OnceLock, sync::RwLock};
+use std::{
+    collections::{HashMap, HashSet},
+    sync::{OnceLock, RwLock},
+};
 
 // OnceLock allows for lazy initialization and a singleton pattern, RW lock will ensure that multiple mutable references can be created while maintaining thread safety
 static INSTANCE: OnceLock<RwLock<Linker>> = OnceLock::new();
@@ -54,13 +57,10 @@ impl Linker {
             }
 
             // Add the address to this corresponding hashset
-            self.distributing.get_mut(&element).unwrap().insert(source.clone());
-        }
-
-        // Print current state of distributing hashmap
-        println!("\nDistributing Map:");
-        for (key, value) in &self.distributing {
-            println!("{}: {:?}", key, value);
+            self.distributing
+                .get_mut(&element)
+                .unwrap()
+                .insert(source.clone());
         }
     }
 
@@ -78,12 +78,39 @@ impl Linker {
             }
 
             // Add the address to this corresponding hashset
-            self.requesting.get_mut(&element).unwrap().insert(source.clone());
+            self.requesting
+                .get_mut(&element)
+                .unwrap()
+                .insert(source.clone());
         }
-        // Print current state of requesting hashmap
-        println!("\nRequesting Map:");
-        for (key, value) in &self.requesting {
-            println!("{}: {:?}", key, value);
+    }
+
+    /**
+     * This function is used to get the addresses of the distributors for a given hash
+     * @param requesting: Vec<String> - A vector of strings containing the hashes of the files being requested
+     * @return HashMap<String, Vec<String>> - A hashmap of the form <file_hash, [distributing_addresses]>
+     */
+    pub fn get_distributors(&self, requesting: Vec<String>) -> HashMap<String, Vec<String>> {
+        // Create a new hashmap to store the response
+        let mut response: HashMap<String, Vec<String>> = HashMap::new();
+
+        // Iterate over the requesting hashes
+        for element in requesting {
+            // Create a vector of strings to store the addresses
+            let mut addresses: Vec<String> = Vec::new();
+
+            // Check if the element is in the distributing hashmap
+            if let Some(distributors) = self.distributing.get(&element) {
+                // Iterate over the addresses and add them to the vector
+                for address in distributors {
+                    addresses.push(address.clone());
+                }
+            }
+
+            // Add the addresses to the response hashmap
+            response.insert(element.clone(), addresses);
         }
+
+        return response;
     }
 }
