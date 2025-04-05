@@ -3,7 +3,8 @@ use std::net::TcpStream;
 
 mod file_ops;
 
-const TARGET: &str = "127.0.0.1:7777";
+const LINKING_SERVER: &str = "127.0.0.1:7777";
+const TRANSFER_SERVER: &str = "127.0.0.1:7778";
 
 /**
  * Constructs a request to send to the server
@@ -40,9 +41,17 @@ fn construct_request(distributing: &Vec<String>, requesting: &Vec<String>) -> Ve
  */
 fn send_request(request: Vec<String>) {
     // Open the stream and send the request
-    let mut stream: TcpStream = TcpStream::connect(TARGET).unwrap();
+    let mut stream: TcpStream = TcpStream::connect(LINKING_SERVER).unwrap();
     for line in request {
         stream.write_all(line.as_bytes()).unwrap();
+    }
+}
+
+/** For debugging */
+fn print_request(request: &Vec<String>) {
+    println!("Sent Request:");
+    for line in request {
+        print!("{}", line);
     }
 }
 
@@ -59,6 +68,7 @@ fn main() {
 
     // Construct the request
     let request = construct_request(&distributing, &requesting);
+    print_request(&request);
 
     // Send the request
     send_request(request);

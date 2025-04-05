@@ -21,11 +21,19 @@ impl Linker {
         }
     }
 
+    /**
+     * This is for the singleton pattern and ensures that we only have one instance of the linker at a time and that this instance can be requested globally
+     * @return &'static RwLock<Linker> - A reference to the linker instance
+     */
     pub fn instance() -> &'static RwLock<Linker> {
         INSTANCE.get_or_init(|| RwLock::new(Linker::new()))
     }
 
-    pub fn add_distributing(&mut self){
-        println!("Added");
+    pub fn add_distributing(&mut self, source: &str, hash: &str){
+        println!("Added Distributing: source: {source} with hash: {hash}");
+    }
+
+    pub fn add_requesting(&mut self, source: &str, hash: &str){
+        println!("Added Requesting: source: {source} with hash: {hash}");
     }
 }
