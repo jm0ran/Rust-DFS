@@ -1,20 +1,25 @@
 use std::io::Write;
-use std::net::TcpStream;
+use std::net::{Shutdown, TcpStream};
+use std::io::Read;
 
 mod file_ops;
 
 const LINKING_SERVER: &str = "127.0.0.1:7777";
-const TRANSFER_SERVER: &str = "127.0.0.1:7778";
+const TRANSFER_SERVER: &str = "127.0.0.1:7779";
 
 /**
  * Constructs a request to send to the server
  * @param distributing: &Vec<String> - A vector of strings containing the files to distribute
  * @param requesting: &Vec<String> - A vector of strings containing the files to request
+ * @param source: IP address of the source with the port, this isn't the IP connected to the listener server but the port used for file transfer between clients, broadcast address
  * @return Vec<String> - A vector of strings containing the request
  */
-fn construct_request(distributing: &Vec<String>, requesting: &Vec<String>) -> Vec<String> {
+fn construct_request(distributing: &Vec<String>, requesting: &Vec<String>, source: String) -> Vec<String> {
     let mut response: Vec<String> = Vec::new();
     response.push(String::from("#S RDFS 0.1 DISCOVERY_POST\n"));
+
+    // Add the source IP address to the request
+    response.push(format!("#A {}\n", source));
 
     // Add all distributing files to the request
     response.push(String::from("#D\n"));
@@ -45,6 +50,14 @@ fn send_request(request: Vec<String>) {
     for line in request {
         stream.write_all(line.as_bytes()).unwrap();
     }
+
+    // Our request is complete and we can shut down the write stream
+    stream.shutdown(Shutdown::Write).unwrap();
+    
+    // Read the response from the server
+    let mut response = String::new();
+    stream.read_to_string(&mut response).unwrap();
+    println!("Server Response: {}", response);
 }
 
 /** For debugging */
@@ -67,7 +80,7 @@ fn main() {
     requesting.push(String::from("TEMPORARY REQUEST VALUE"));
 
     // Construct the request
-    let request = construct_request(&distributing, &requesting);
+    let request = construct_request(&distributing, &requesting, TRANSFER_SERVER.to_string());
     print_request(&request);
 
     // Send the request
