@@ -4,7 +4,7 @@ use std::net::{Shutdown, TcpStream};
 
 mod file_ops;
 
-const LINKING_SERVER: &str = "127.0.0.1:7777";
+const LINKING_SERVER: &str = "127.0.0.1:7771";
 const TRANSFER_SERVER: &str = "127.0.0.1:7779";
 
 /**
@@ -65,6 +65,7 @@ fn send_request(request: Vec<String>) {
 }
 
 /** For debugging */
+#[allow(dead_code)]
 fn print_request(request: &Vec<String>) {
     println!("Sent Request:");
     for line in request {
@@ -82,10 +83,10 @@ fn main() {
     // Create a temporary requesting array
     let mut requesting: Vec<String> = Vec::new();
     requesting.push(String::from("TEMPORARY REQUEST VALUE"));
+    requesting.push(String::from("TEMPORARY REQUEST VALUE 2"));
 
     // Construct the request
     let request = construct_request(&distributing, &requesting, TRANSFER_SERVER.to_string());
-    print_request(&request);
 
     // Send the request
     send_request(request);

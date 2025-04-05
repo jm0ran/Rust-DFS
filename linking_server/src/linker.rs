@@ -49,16 +49,16 @@ impl Linker {
      * @param distributing: Vec<String> - A vector of strings containing the hashes of the files being distributed
      * @return None
      */
-    pub fn add_distributing(&mut self, source: String, distributing: Vec<String>) {
+    pub fn add_distributing(&mut self, source: String, distributing: &Vec<String>) {
         for element in distributing {
             // Check if the element is already in the distributing hashmap
-            if !self.distributing.contains_key(&element) {
+            if !self.distributing.contains_key(element) {
                 self.distributing.insert(element.clone(), HashSet::new());
             }
 
             // Add the address to this corresponding hashset
             self.distributing
-                .get_mut(&element)
+                .get_mut(element)
                 .unwrap()
                 .insert(source.clone());
         }
@@ -70,16 +70,16 @@ impl Linker {
      * @param requesting: Vec<String> - A vector of strings containing the hashes of the files being requested
      * @return None
      */
-    pub fn add_requesting(&mut self, source: String, requesting: Vec<String>) {
+    pub fn add_requesting(&mut self, source: String, requesting: &Vec<String>) {
         for element in requesting {
             // Check if the element is already in the requesting hashmap
-            if !self.requesting.contains_key(&element) {
+            if !self.requesting.contains_key(element) {
                 self.requesting.insert(element.clone(), HashSet::new());
             }
 
             // Add the address to this corresponding hashset
             self.requesting
-                .get_mut(&element)
+                .get_mut(element)
                 .unwrap()
                 .insert(source.clone());
         }
@@ -90,7 +90,7 @@ impl Linker {
      * @param requesting: Vec<String> - A vector of strings containing the hashes of the files being requested
      * @return HashMap<String, Vec<String>> - A hashmap of the form <file_hash, [distributing_addresses]>
      */
-    pub fn get_distributors(&self, requesting: Vec<String>) -> HashMap<String, Vec<String>> {
+    pub fn get_distributors(&self, requesting: &Vec<String>) -> HashMap<String, Vec<String>> {
         // Create a new hashmap to store the response
         let mut response: HashMap<String, Vec<String>> = HashMap::new();
 
@@ -100,7 +100,7 @@ impl Linker {
             let mut addresses: Vec<String> = Vec::new();
 
             // Check if the element is in the distributing hashmap
-            if let Some(distributors) = self.distributing.get(&element) {
+            if let Some(distributors) = self.distributing.get(element) {
                 // Iterate over the addresses and add them to the vector
                 for address in distributors {
                     addresses.push(address.clone());

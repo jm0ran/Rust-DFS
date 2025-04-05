@@ -1,6 +1,7 @@
 mod linker;
 
 use std::{
+    collections::HashMap,
     io::{BufRead, BufReader, Write},
     net::{TcpListener, TcpStream},
 };
@@ -14,14 +15,17 @@ enum StreamReadState {
     COMPLETE,
 }
 
+// This is the port that the server will listen on for incoming requests
+static SERVER_ADDRESS: &str = "127.0.0.1:7771";
+
 fn main() {
     run_server();
 }
 
 fn run_server() {
     //let mut mapping: HashMap<String, String> = HashMap::new();
-    let listener = TcpListener::bind("127.0.0.1:7777").unwrap();
-    println!("Linking Server is listening on localhost port 7777");
+    let listener = TcpListener::bind(SERVER_ADDRESS).unwrap();
+    println!("Linking Server is listening on {SERVER_ADDRESS}");
 
     for stream in listener.incoming() {
         match stream {
@@ -42,11 +46,19 @@ fn get_response(distributing: Vec<String>, requesting: Vec<String>, source: Stri
     {
         // Get our write lock on the linker
         let mut linker_lock = linker.write().unwrap();
-        linker_lock.add_distributing(source.clone(), distributing);
-        linker_lock.add_requesting(source.clone(), requesting);
+        linker_lock.add_distributing(source.clone(), &distributing);
+        linker_lock.add_requesting(source.clone(), &requesting);
     }
 
-    return format!("HTTP/1.1 200 OK\r\n\r\nReceived Data\r\n");
+    let distributors: HashMap<String, Vec<String>>; // This will be the response we send back to the client
+                                                    // Next we wan to open a read lock on the linker and get the distributors for the files we are requesting
+    {
+        // Get our read lock on the linker
+        let linker_lock = linker.read().unwrap();
+        distributors = linker_lock.get_distributors(&requesting);
+    }
+
+    return format!("HTTP/1.1 200 OK\r\n\r\n{:?}\r\n", distributors);
 }
 
 fn handle_client(mut stream: TcpStream) {
