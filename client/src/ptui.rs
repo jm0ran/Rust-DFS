@@ -3,55 +3,61 @@
  */
 use std::io::{self, Write};
 use std::str::Split;
-use crate::linker;
+
+pub mod file_ops;
+pub mod linker_comm;
+
+mod linker;
 
 fn linker_cmd(mut line_parts: Split<'_, &str>) {
     // Get reference to the linker singleton
     let linker = linker::Linker::instance();
-    
+
     // Ensure line has a next argument
     let arg_1;
     match line_parts.next() {
         Some(arg) => {
             arg_1 = arg;
-        },
+        }
         None => {
             println!("Did not provide expect arguments for linker command");
             return;
-        },
+        }
     }
-    
+
     match arg_1 {
         "set" => {
             let new_target: String;
             match line_parts.next() {
                 Some(target) => {
                     new_target = String::from(target); // Will want some input validation here eventually
-                },
+                }
                 None => {
                     println!("Did not provide a new linking server address to set");
                     return;
                 }
             }
-
             {
                 let mut lock = linker.write().unwrap();
                 lock.set_target(new_target);
             }
-        },
+        }
         "get" => {
-            let target:String;
+            let target: String;
             {
                 let lock = linker.read().unwrap();
                 target = lock.get_target();
             }
             println!("Target: {target}")
-        },
+        }
+        "update" => {
+            let mut lock = linker.write().unwrap();
+            lock.update();
+        }
         _ => {
             println!("Unrecognized Linker Argument: {}", arg_1);
-        },
+        }
     }
-    
 }
 
 /**
@@ -71,11 +77,11 @@ pub fn process_input(line: &str) {
         "exit" => {
             println!("Exiting...");
             std::process::exit(0);
-        },
+        }
         "linker" => {
             println!("Linker");
             linker_cmd(line_parts);
-        },
+        }
         _ => {
             println!("Unrecognized command: {}", line);
         }
@@ -94,4 +100,8 @@ pub fn run() {
         process_input(&input);
         input.clear();
     }
+}
+
+fn main() {
+    run();
 }

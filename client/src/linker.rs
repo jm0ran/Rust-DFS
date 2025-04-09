@@ -1,8 +1,8 @@
-use std::sync::{OnceLock, RwLock};
-
+use crate::linker_comm;
 /**
  * Maintains communication with linking server
  */
+use std::sync::{OnceLock, RwLock};
 
 static INSTANCE: OnceLock<RwLock<Linker>> = OnceLock::new();
 
@@ -31,7 +31,7 @@ impl Linker {
     /**
      * Return target of linker as a string representing linker server address
      */
-    pub fn get_target(&self) -> String{
+    pub fn get_target(&self) -> String {
         return self.target.clone();
     }
 
@@ -40,5 +40,14 @@ impl Linker {
      */
     pub fn set_target(&mut self, new_target: String) {
         self.target = new_target;
+    }
+
+    /**
+     * Update the linker by making a request to the linking server
+     * @todo update arguments, right now just linking up some existing code
+     * @todo will need some level of error handling here for if server is unable to be reached
+     */
+    pub fn update(&mut self) {
+        linker_comm::run();
     }
 }
