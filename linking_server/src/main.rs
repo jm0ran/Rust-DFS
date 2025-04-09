@@ -7,7 +7,7 @@ use std::{
 };
 
 #[derive(Debug, PartialEq)]
-enum StreamReadState {
+enum DiscoveryReadState {
     INITIAL,
     ADDRESS,
     DISTRIBUTING,
@@ -39,7 +39,7 @@ fn run_server() {
     }
 }
 
-fn get_response(distributing: Vec<String>, requesting: Vec<String>, source: String) -> String {
+fn get_response(distributing: Vec<String>, requesting: Vec<String>, source: String) -> Vec<String> {
     let linker = linker::Linker::instance();
 
     // First we want to register this client as a supplier for the files it is distributing
@@ -58,7 +58,21 @@ fn get_response(distributing: Vec<String>, requesting: Vec<String>, source: Stri
         distributors = linker_lock.get_distributors(&requesting);
     }
 
-    return format!("HTTP/1.1 200 OK\r\n\r\n{:?}\r\n", distributors);
+    // Construct the response
+    let mut response: Vec<String> = Vec::new();
+    response.push(String::from("#S RDFS 0.1 DISCOVERY_POST\n"));
+    response.push(String::from("#T\n"));
+    for entry in distributors.iter() {
+        let mut line: String = format!("{}", entry.0);
+        for provider in entry.1 {
+            line.push_str(format!(" {}", provider).as_str());
+        }
+        line.push('\n');
+        response.push(line);
+    }
+    response.push(String::from("#E\n"));
+
+    return response;
 }
 
 fn handle_client(mut stream: TcpStream) {
@@ -76,57 +90,61 @@ fn handle_client(mut stream: TcpStream) {
         .collect();
 
     // Process data into our Vectors
-    let mut read_state = StreamReadState::INITIAL;
+    let mut read_state = DiscoveryReadState::INITIAL;
     for line in data {
         match read_state {
-            StreamReadState::INITIAL => {
+            DiscoveryReadState::INITIAL => {
                 // Todo: Check state of request header to ensure protocol is correct, for now assume it is and more on
                 if line.starts_with("#S") {
-                    read_state = StreamReadState::ADDRESS;
+                    read_state = DiscoveryReadState::ADDRESS;
                 }
                 continue;
             }
-            StreamReadState::ADDRESS => {
+            DiscoveryReadState::ADDRESS => {
                 if line.starts_with("#A") {
                     // Parse out the address
                     address.push_str(line.split_at(3).1);
-                    read_state = StreamReadState::DISTRIBUTING;
+                    read_state = DiscoveryReadState::DISTRIBUTING;
                 }
                 continue;
             }
-            StreamReadState::DISTRIBUTING => {
+            DiscoveryReadState::DISTRIBUTING => {
                 if line == "#D" {
                     // We don't need to capture this line
                     continue;
                 }
                 if line == "#R" {
-                    read_state = StreamReadState::REQUESTING;
+                    read_state = DiscoveryReadState::REQUESTING;
                 } else {
                     distributing.push(line.clone());
                 }
                 continue;
             }
-            StreamReadState::REQUESTING => {
+            DiscoveryReadState::REQUESTING => {
                 if line == "#E" {
-                    read_state = StreamReadState::COMPLETE;
+                    read_state = DiscoveryReadState::COMPLETE;
                 } else {
                     requesting.push(line.clone());
                 }
                 continue;
             }
-            StreamReadState::COMPLETE => {
+            DiscoveryReadState::COMPLETE => {
                 continue;
             }
         }
     }
 
-    if read_state != StreamReadState::COMPLETE {
+    if read_state != DiscoveryReadState::COMPLETE {
         panic!("Stream read state did not reach COMPLETE state");
     }
 
     // Send our response indicating completion
     let response = get_response(distributing, requesting, address.clone());
-    stream.write_all(response.as_bytes()).unwrap();
+
+    // Write response into the stream
+    for line in response {
+        stream.write_all(line.as_bytes()).unwrap();
+    }
 
     println!("Processed Request From: {}", &address);
 }

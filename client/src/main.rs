@@ -1,3 +1,4 @@
+use std::collections::HashMap;
 use std::io::Read;
 use std::io::Write;
 use std::net::{Shutdown, TcpStream};
@@ -6,6 +7,12 @@ mod file_ops;
 
 const LINKING_SERVER: &str = "127.0.0.1:7771";
 const TRANSFER_SERVER: &str = "127.0.0.1:7779";
+
+enum DiscoveryReadState {
+    INITIAL,
+    TARGETS,
+    COMPLETE,
+}
 
 /**
  * Constructs a request to send to the server
@@ -61,7 +68,56 @@ fn send_request(request: Vec<String>) {
     // Read the response from the server
     let mut response = String::new();
     stream.read_to_string(&mut response).unwrap();
-    println!("Server Response: {}", response);
+    let result = process_response(response);
+
+    // Print the results for debugging temporarily
+    println!("Results:");
+    for (file_hash, providers) in result {
+        println!("File Hash: {}", file_hash);
+        for provider in providers {
+            println!("\tProvider: {}", provider);
+        }
+    }
+}
+
+/**
+ * Process a response into a hashmap of hashes to a list of their providers
+ * @param response: response as a string
+ * @return results: HashMap of hashes to a list of their providers
+ */
+fn process_response(response: String) -> HashMap<String, Vec<String>> {
+    let mut results: HashMap<String, Vec<String>> = HashMap::new();
+
+    let mut read_state = DiscoveryReadState::INITIAL;
+    for line in response.lines() {
+        match read_state {
+            DiscoveryReadState::INITIAL => {
+                if line.starts_with("#S") {
+                    read_state = DiscoveryReadState::TARGETS;
+                }
+            }
+            DiscoveryReadState::TARGETS => {
+                if line == "#T" {
+                    continue; // Just want to pass over this for now
+                } else if line == "#E" {
+                    read_state = DiscoveryReadState::COMPLETE;
+                } else {
+                    let mut line_parts = line.split(" ");
+                    let file_hash: String = String::from(line_parts.next().unwrap());
+                    let mut providers: Vec<String> = Vec::new();
+                    for part in line_parts {
+                        providers.push(String::from(part));
+                    }
+                    results.insert(file_hash, providers);
+                }
+            }
+            DiscoveryReadState::COMPLETE => {
+                continue; // Do noting for the moment
+            }
+        }
+    }
+
+    return results;
 }
 
 /** For debugging */
@@ -82,8 +138,8 @@ fn main() {
 
     // Create a temporary requesting array
     let mut requesting: Vec<String> = Vec::new();
-    requesting.push(String::from("TEMPORARY REQUEST VALUE"));
-    requesting.push(String::from("TEMPORARY REQUEST VALUE 2"));
+    requesting.push(String::from("2dd184b8c84b999a6ccc7ae4da2efc3b3cd455d50a04686caaf90f8f5cd60194c8e0e758947738f1001e01010ddb28e782ed274c966561ba798fe0123f495b5d"));
+    requesting.push(String::from("FAKE_HASH"));
 
     // Construct the request
     let request = construct_request(&distributing, &requesting, TRANSFER_SERVER.to_string());
