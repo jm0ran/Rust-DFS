@@ -2,6 +2,27 @@
 ## Pre-Shared File
 This program is designed so that at the minimum a client must have the SHA3-512 file hash of the file they are requesting. Additionally, the program should have the address of a linking server to query for clients who are distributing their requested files and to broadcast the files they are distributing.
 
+## Client Commands
+### General
+**Exit**: Exit the client application and halt any current downloads, will consider a clean exit option that waits for all currently processing blocks to conclude
+```
+exit
+```
+### Linker
+**Set**: Set the linking server address for the client to use. Address should be in form of `IP:Port`.
+```
+linker set 127.0.0.1:8080
+```
+**Get**: Get the currently set address of the linker, prints this address to standard output
+```
+linker get
+```
+**Update**: Instruct linker object to request new data from the linking server. While this should be run whenever new requests and distributing files are registered as well as on a constant interval, this command lets the client run the operation manually.
+```
+linker update
+```
+### File
+
 ## Protocol
 ### Discovery (Client -> Linking Server)
 Client to linking server requests occur when the client connects to a new linking server or is requesting an update either looking for new distributors or requesting new files. The request is sent as a collection of lines with # annotations used to split the request body into parts. A request has the following form:
