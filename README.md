@@ -27,3 +27,24 @@ Moving to the response, we will be informing the client of the distributors for 
 2dd184b8c84b999a6ccc7ae4da2efc3b3cd455d50a04686caaf90f8f5cd60194c8e0e758947738f1001e01010ddb28e782ed274c966561ba798fe0123f495b5d 127.0.0.1:8072 127.0.0.3:8072
 #E
 ```
+The first line is the same as the initial request and provides information on the protocol version being used as well as the corresponding action. On the second line, #T represents the start of the targets on a file by file basis. Each next line up tp #E has the hash of the requested file as well as a collection of distributors who have that file available. #E indicates that the request is complete and all distributors have been read. As an important note all requested files should be returned here, if a file has no distributors then the line should simply contain the file hash.
+
+### Data Request (Client -> Client)
+Once clients have acquired a target for their requested file they can make a request to it. A request focuses on a single block of data based on the previously defined data size. The request from the receiving to the distributing client takes the following form:
+
+```
+#S RDFS 0.1 BLOCK_REQUEST 1600
+#T 2dd184b8c84b999a6ccc7ae4da2efc3b3cd455d50a04686caaf90f8f5cd60194c8e0e758947738f1001e01010ddb28e782ed274c966561ba798fe0123f495b5d
+#B 122
+#E
+```
+The first line is identical to our other requests the only difference being the BLOCK_REQUEST tag denoting that this message is requesting a block of data. Next we have #T which denotes that this line contains the target file hash that this client is looking for. Then we have #B which denotes the numbered block this client is looking for. Finally we have #E which denotes the end of this request.
+
+Looking at our response, if the request is successful, it will take the following form:
+```
+#S RDFS 0.1 BLOCK_REQUEST 1600
+#D
+[RAW BITES OF BLOCK SIZE]
+#E
+```
+Note that this is pretty straightforward. We have an identical header and then we have a #D to tell the client that data will follow. The client will read the corresponding block size and then the #E denotes the conclusion of the response.
