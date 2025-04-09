@@ -4,6 +4,8 @@ use std::io::Write;
 use std::net::{Shutdown, TcpStream};
 
 mod file_ops;
+mod ptui;
+mod linker;
 
 const LINKING_SERVER: &str = "127.0.0.1:7771";
 const TRANSFER_SERVER: &str = "127.0.0.1:7779";
@@ -129,7 +131,7 @@ fn print_request(request: &Vec<String>) {
     }
 }
 
-fn main() {
+pub fn run() {
     // Get files to distribute
     let distributing: Vec<String> = file_ops::hash_files_shallow("temp")
         .values()
@@ -146,4 +148,9 @@ fn main() {
 
     // Send the request
     send_request(request);
+}
+
+fn main() {
+    ptui::run();
+    // run();
 }
