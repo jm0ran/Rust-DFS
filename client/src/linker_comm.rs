@@ -1,11 +1,7 @@
-use crate::file_ops;
 use std::collections::HashMap;
 use std::io::Read;
 use std::io::Write;
 use std::net::{Shutdown, TcpStream};
-
-const LINKING_SERVER: &str = "127.0.0.1:7771";
-const TRANSFER_SERVER: &str = "127.0.0.1:7779";
 
 enum DiscoveryReadState {
     INITIAL,
@@ -20,7 +16,7 @@ enum DiscoveryReadState {
  * @param source: IP address of the source with the port, this isn't the IP connected to the listener server but the port used for file transfer between clients, broadcast address
  * @return Vec<String> - A vector of strings containing the request
  */
-fn construct_request(
+pub fn construct_request(
     distributing: &Vec<String>,
     requesting: &Vec<String>,
     source: String,
@@ -54,29 +50,25 @@ fn construct_request(
  * @param request: Vec<String> - A vector of strings containing the request
  * @return None
  */
-fn send_request(request: Vec<String>) {
+pub fn send_request(
+    request: Vec<String>,
+    linking_server: &str,
+) -> Result<HashMap<String, Vec<String>>, std::io::Error> {
     // Open the stream and send the request
-    let mut stream: TcpStream = TcpStream::connect(LINKING_SERVER).unwrap();
+    let mut stream: TcpStream = TcpStream::connect(linking_server)?;
     for line in request {
-        stream.write_all(line.as_bytes()).unwrap();
+        stream.write_all(line.as_bytes())?;
     }
 
     // Our request is complete and we can shut down the write stream
-    stream.shutdown(Shutdown::Write).unwrap();
+    stream.shutdown(Shutdown::Write)?;
 
     // Read the response from the server
     let mut response = String::new();
-    stream.read_to_string(&mut response).unwrap();
+    stream.read_to_string(&mut response)?;
     let result = process_response(response);
 
-    // Print the results for debugging temporarily
-    println!("Results:");
-    for (file_hash, providers) in result {
-        println!("File Hash: {}", file_hash);
-        for provider in providers {
-            println!("\tProvider: {}", provider);
-        }
-    }
+    return Ok(result);
 }
 
 /**
@@ -126,23 +118,4 @@ fn print_request(request: &Vec<String>) {
     for line in request {
         print!("{}", line);
     }
-}
-
-pub fn run() {
-    // Get files to distribute
-    let distributing: Vec<String> = file_ops::hash_files_shallow("temp")
-        .values()
-        .cloned()
-        .collect();
-
-    // Create a temporary requesting array
-    let mut requesting: Vec<String> = Vec::new();
-    requesting.push(String::from("2dd184b8c84b999a6ccc7ae4da2efc3b3cd455d50a04686caaf90f8f5cd60194c8e0e758947738f1001e01010ddb28e782ed274c966561ba798fe0123f495b5d"));
-    requesting.push(String::from("FAKE_HASH"));
-
-    // Construct the request
-    let request = construct_request(&distributing, &requesting, TRANSFER_SERVER.to_string());
-
-    // Send the request
-    send_request(request);
 }

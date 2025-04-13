@@ -4,9 +4,11 @@
 use std::io::{self, Write};
 use std::str::Split;
 
+pub mod config;
 pub mod file_ops;
 pub mod linker_comm;
 
+mod file_manager;
 mod linker;
 
 fn linker_cmd(mut line_parts: Split<'_, &str>) {
@@ -52,10 +54,61 @@ fn linker_cmd(mut line_parts: Split<'_, &str>) {
         }
         "update" => {
             let mut lock = linker.write().unwrap();
-            lock.update();
+            match lock.update() {
+                Some(err) => {
+                    println!("Linker Update Encountered an Error: {}", err);
+                }
+                None => {
+                    println!("Linker Updated Successfully"); // TODO: Determine if I even want to print for positive output
+                }
+            }
         }
         _ => {
             println!("Unrecognized Linker Argument: {}", arg_1);
+        }
+    }
+}
+
+fn file_cmd(mut line_parts: Split<'_, &str>) {
+    // Get reference to the file manager singleton
+    let file_manager = file_manager::FileManager::instance();
+
+    // Ensure line has a next argument
+    let arg_1;
+    match line_parts.next() {
+        Some(arg) => {
+            arg_1 = arg;
+        }
+        None => {
+            println!("Did not provide expect arguments for files command");
+            return;
+        }
+    }
+
+    match arg_1 {
+        "scan" => {
+            let mut lock = file_manager.write().unwrap();
+            match lock.scan_distributing() {
+                Some(err) => {
+                    println!(
+                        "Encountered an error when scanning the distribution directory: {err}"
+                    );
+                }
+                None => {
+                    println!("Scan Complete");
+                }
+            }
+        }
+        "distributing" => {
+            let lock = file_manager.read().unwrap();
+            let distributing = lock.get_distributing();
+            println!("Files For Distribution");
+            for entry in distributing.iter() {
+                println!("\t{} : {}", entry.0, entry.1);
+            }
+        }
+        _ => {
+            println!("Unrecognized Files Argument: {}", arg_1);
         }
     }
 }
@@ -78,9 +131,15 @@ pub fn process_input(line: &str) {
             println!("Exiting...");
             std::process::exit(0);
         }
+        "clear" => {
+            print!("\x1B[2J\x1B[1;1H"); // Clear terminal screen
+            io::stdout().flush().unwrap();
+        }
         "linker" => {
-            println!("Linker");
             linker_cmd(line_parts);
+        }
+        "files" => {
+            file_cmd(line_parts);
         }
         _ => {
             println!("Unrecognized command: {}", line);

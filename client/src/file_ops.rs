@@ -9,13 +9,13 @@ use std::io::Read;
  * @param path: String - The path to the file to hash
  * @return String - The hash of the file
  */
-pub fn hash_file(path: &str) -> String {
-    let mut file = File::open(path).expect("Unable to open file");
+pub fn hash_file(path: &str) -> Result<String, std::io::Error> {
+    let mut file = File::open(path)?;
     let mut buffer = vec![0u8; 2 * 1024 * 1024];
     let mut hasher = Sha3_512::new();
 
     loop {
-        let bytes_read = file.read(&mut buffer).expect("Unable to read file");
+        let bytes_read = file.read(&mut buffer)?;
         if bytes_read == 0 {
             break;
         }
@@ -23,7 +23,7 @@ pub fn hash_file(path: &str) -> String {
     }
 
     let result = hasher.finalize();
-    return format!("{:x}", result);
+    return Ok(format!("{:x}", result));
 }
 
 /**
@@ -31,14 +31,14 @@ pub fn hash_file(path: &str) -> String {
  * @param path: &str - The path to the directory
  * @return HashMap<String, String> - A hashmap of the file path to it's corresponding hash
  */
-pub fn hash_files_shallow(path: &str) -> HashMap<String, String> {
+pub fn hash_files_shallow(path: &str) -> Result<HashMap<String, String>, std::io::Error> {
     let mut files_map: HashMap<String, String> = HashMap::new();
-    let (_, files) = get_directory_children(path);
+    let (_, files) = get_directory_children(path)?;
     for f in files {
-        files_map.insert(f.clone(), hash_file(&f));
+        files_map.insert(f.clone(), hash_file(&f)?);
     }
 
-    return files_map;
+    return Ok(files_map);
 }
 
 /**
@@ -46,14 +46,22 @@ pub fn hash_files_shallow(path: &str) -> HashMap<String, String> {
  * @param path: &str - The path to the directory
  * @return (Vec<String>, Vec<String>) - A tuple containing the directories and files in the directory
  */
-pub fn get_directory_children(path: &str) -> (Vec<String>, Vec<String>) {
+pub fn get_directory_children(path: &str) -> Result<(Vec<String>, Vec<String>), std::io::Error> {
     let mut dirs: Vec<String> = Vec::new();
     let mut files: Vec<String> = Vec::new();
 
-    for entry in std::fs::read_dir(path).expect("Unable to read directory") {
-        let entry = entry.expect("Unable to read entry");
+    for entry in std::fs::read_dir(path)? {
+        let entry = entry?;
         let path = entry.path();
-        let path_str = path.to_str().expect("Unable to convert path to string");
+        let path_str = match path.to_str() {
+            Some(result) => result,
+            None => {
+                return Err(std::io::Error::new(
+                    std::io::ErrorKind::Other,
+                    "Failed to convert path to string",
+                ));
+            }
+        };
         if path.is_dir() {
             dirs.push(String::from(path_str));
         } else {
@@ -61,5 +69,5 @@ pub fn get_directory_children(path: &str) -> (Vec<String>, Vec<String>) {
         }
     }
 
-    return (dirs, files);
+    return Ok((dirs, files));
 }

@@ -1,13 +1,19 @@
-use crate::linker_comm;
+use crate::{config, linker_comm};
 /**
  * Maintains communication with linking server
  */
-use std::sync::{OnceLock, RwLock};
+use std::{
+    collections::HashMap,
+    sync::{OnceLock, RwLock},
+};
 
 static INSTANCE: OnceLock<RwLock<Linker>> = OnceLock::new();
 
 pub struct Linker {
     target: String,
+    distributing: Vec<String>,
+    requesting: Vec<String>,
+    distributors: HashMap<String, Vec<String>>,
 }
 
 impl Linker {
@@ -16,6 +22,9 @@ impl Linker {
      */
     fn new() -> Self {
         Linker {
+            distributing: Vec::new(),
+            requesting: Vec::new(),
+            distributors: HashMap::new(),
             target: String::from(""),
         }
     }
@@ -47,7 +56,21 @@ impl Linker {
      * @todo update arguments, right now just linking up some existing code
      * @todo will need some level of error handling here for if server is unable to be reached
      */
-    pub fn update(&mut self) {
-        linker_comm::run();
+    pub fn update(&mut self) -> Option<std::io::Error> {
+        let request = linker_comm::construct_request(
+            &self.distributing,
+            &self.requesting,
+            String::from(config::TRANSFER_ADDRESS),
+        );
+        match linker_comm::send_request(request, &self.target) {
+            Ok(result) => {
+                self.distributors = result;
+            }
+            Err(error) => {
+                return Some(error);
+            }
+        }
+
+        return None;
     }
 }

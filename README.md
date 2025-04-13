@@ -8,6 +8,10 @@ This program is designed so that at the minimum a client must have the SHA3-512 
 ```
 exit
 ```
+**clear** Clears the current terminal screen, just wanted to add this because I like it for debugging
+```
+clear
+```
 ### Linker
 **Set**: Set the linking server address for the client to use. Address should be in form of `IP:Port`.
 ```
@@ -22,6 +26,14 @@ linker get
 linker update
 ```
 ### File
+**Scan**: Scan the distributing directory to load files and their corresponding hashes into the file manager. Currently only performs a shallow search on the directory. This directory can be configured in the config.rs file
+```
+files scan
+```
+**Distributing**: Get distributing file paths as well as their corresponding hashes.
+```
+files distributing
+```
 
 ## Protocol
 ### Discovery (Client -> Linking Server)
