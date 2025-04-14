@@ -1,9 +1,9 @@
-use crate::{config, linker_comm};
+use crate::{config, file_manager, linker_comm};
 /**
  * Maintains communication with linking server
  */
 use std::{
-    collections::HashMap,
+    collections::{HashMap, HashSet},
     sync::{OnceLock, RwLock},
 };
 
@@ -11,8 +11,6 @@ static INSTANCE: OnceLock<RwLock<Linker>> = OnceLock::new();
 
 pub struct Linker {
     target: String,
-    distributing: Vec<String>,
-    requesting: Vec<String>,
     distributors: HashMap<String, Vec<String>>,
 }
 
@@ -22,10 +20,8 @@ impl Linker {
      */
     fn new() -> Self {
         Linker {
-            distributing: Vec::new(),
-            requesting: Vec::new(),
             distributors: HashMap::new(),
-            target: String::from(""),
+            target: String::from(config::DEFAULT_LINKER),
         }
     }
 
@@ -57,9 +53,19 @@ impl Linker {
      * @todo will need some level of error handling here for if server is unable to be reached
      */
     pub fn update(&mut self) -> Option<std::io::Error> {
+        // Get requesting and distributing from file manager
+        let distributing: HashSet<String>;
+        let requesting: HashSet<String>;
+        {
+            let file_manager = file_manager::FileManager::instance();
+            let lock = file_manager.read().unwrap();
+            distributing = lock.get_distributing_hashes();
+            requesting = lock.get_requesting_hashes();
+        }
+        
         let request = linker_comm::construct_request(
-            &self.distributing,
-            &self.requesting,
+            &distributing,
+            &requesting,
             String::from(config::TRANSFER_ADDRESS),
         );
         match linker_comm::send_request(request, &self.target) {
@@ -72,5 +78,12 @@ impl Linker {
         }
 
         return None;
+    }
+
+    /**
+     * Debug function to see values in the linker
+     */
+    pub fn debug(&self){
+        println!("{:?}", self.distributors);
     }
 }

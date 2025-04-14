@@ -1,6 +1,6 @@
 # Rust Distributed File Sharing
 ## Pre-Shared File
-This program is designed so that at the minimum a client must have the SHA3-512 file hash of the file they are requesting. Additionally, the program should have the address of a linking server to query for clients who are distributing their requested files and to broadcast the files they are distributing.
+This program is designed so that at the minimum a client must have the SHA3-512 file hash of the file they are requesting in addition to the file path being targeted. Additionally, the program should have the address of a linking server to query for clients who are distributing their requested files and to broadcast the files they are distributing.
 
 ## Client Commands
 ### General
@@ -8,7 +8,7 @@ This program is designed so that at the minimum a client must have the SHA3-512 
 ```
 exit
 ```
-**clear** Clears the current terminal screen, just wanted to add this because I like it for debugging
+**Clear**: Clears the current terminal screen, just wanted to add this because I like it for debugging
 ```
 clear
 ```

@@ -1,12 +1,13 @@
 use std::collections::HashMap;
+use std::collections::HashSet;
 use std::io::Read;
 use std::io::Write;
 use std::net::{Shutdown, TcpStream};
 
 enum DiscoveryReadState {
-    INITIAL,
-    TARGETS,
-    COMPLETE,
+    Initial,
+    Targets,
+    Complete,
 }
 
 /**
@@ -17,8 +18,8 @@ enum DiscoveryReadState {
  * @return Vec<String> - A vector of strings containing the request
  */
 pub fn construct_request(
-    distributing: &Vec<String>,
-    requesting: &Vec<String>,
+    distributing: &HashSet<String>,
+    requesting: &HashSet<String>,
     source: String,
 ) -> Vec<String> {
     let mut response: Vec<String> = Vec::new();
@@ -79,19 +80,19 @@ pub fn send_request(
 fn process_response(response: String) -> HashMap<String, Vec<String>> {
     let mut results: HashMap<String, Vec<String>> = HashMap::new();
 
-    let mut read_state = DiscoveryReadState::INITIAL;
+    let mut read_state = DiscoveryReadState::Initial;
     for line in response.lines() {
         match read_state {
-            DiscoveryReadState::INITIAL => {
+            DiscoveryReadState::Initial => {
                 if line.starts_with("#S") {
-                    read_state = DiscoveryReadState::TARGETS;
+                    read_state = DiscoveryReadState::Targets;
                 }
             }
-            DiscoveryReadState::TARGETS => {
+            DiscoveryReadState::Targets => {
                 if line == "#T" {
                     continue; // Just want to pass over this for now
                 } else if line == "#E" {
-                    read_state = DiscoveryReadState::COMPLETE;
+                    read_state = DiscoveryReadState::Complete;
                 } else {
                     let mut line_parts = line.split(" ");
                     let file_hash: String = String::from(line_parts.next().unwrap());
@@ -102,7 +103,7 @@ fn process_response(response: String) -> HashMap<String, Vec<String>> {
                     results.insert(file_hash, providers);
                 }
             }
-            DiscoveryReadState::COMPLETE => {
+            DiscoveryReadState::Complete => {
                 continue; // Do noting for the moment
             }
         }

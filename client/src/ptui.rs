@@ -7,6 +7,7 @@ use std::str::Split;
 pub mod config;
 pub mod file_ops;
 pub mod linker_comm;
+pub mod file_builder;
 
 mod file_manager;
 mod linker;
@@ -62,7 +63,11 @@ fn linker_cmd(mut line_parts: Split<'_, &str>) {
                     println!("Linker Updated Successfully"); // TODO: Determine if I even want to print for positive output
                 }
             }
-        }
+        },
+        "debug" => {
+            let lock = linker.read().unwrap();
+            lock.debug();
+        },
         _ => {
             println!("Unrecognized Linker Argument: {}", arg_1);
         }
@@ -162,5 +167,11 @@ pub fn run() {
 }
 
 fn main() {
+    {
+        // Temporarily register some requesting hashes because I'm lazy
+        let file_manager = file_manager::FileManager::instance();
+        let mut lock = file_manager.write().unwrap();
+        lock.register_requesting((String::from("./receiving/req-1.txt"), String::from("2dd184b8c84b999a6ccc7ae4da2efc3b3cd455d50a04686caaf90f8f5cd60194c8e0e758947738f1001e01010ddb28e782ed274c966561ba798fe0123f495b5d")));
+    }
     run();
 }
