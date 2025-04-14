@@ -9,7 +9,7 @@ static INSTANCE: OnceLock<RwLock<FileManager>> = OnceLock::new();
 
 pub struct FileManager {
     distributing: HashMap<String, String>, //Hash map of file path to file hash
-    requesting: HashMap<String, String>, // Hash map of file path to file hash
+    requesting: HashMap<String, String>,   // Hash map of file path to file hash
     receiving_builders: HashMap<String, file_builder::FileBuilder>,
 }
 
@@ -21,7 +21,7 @@ impl FileManager {
         FileManager {
             distributing: HashMap::new(),
             requesting: HashMap::new(),
-            receiving_builders: HashMap::new()
+            receiving_builders: HashMap::new(),
         }
     }
 
@@ -59,7 +59,7 @@ impl FileManager {
     pub fn get_distributing_hashes(&self) -> HashSet<String> {
         // This is a very inefficient way to get hash set of hashes, will improve later
         let mut distributing_hashes = HashSet::new();
-        for entry in self.distributing.iter(){
+        for entry in self.distributing.iter() {
             distributing_hashes.insert(String::from(entry.1));
         }
         return distributing_hashes;
@@ -71,7 +71,7 @@ impl FileManager {
     pub fn get_requesting_hashes(&self) -> HashSet<String> {
         // This is a very inefficient way to get hash set of hashes, will improve later
         let mut requesting_hashes = HashSet::new();
-        for entry in self.requesting.iter(){
+        for entry in self.requesting.iter() {
             requesting_hashes.insert(String::from(entry.1));
         }
         return requesting_hashes;
@@ -81,21 +81,24 @@ impl FileManager {
      * Register files to request
      * @param requesting: Tuple of (file_path, file_hash)
      */
-    pub fn register_requesting(&mut self, requesting: (String, String)){
+    pub fn register_requesting(&mut self, requesting: (String, String)) {
         let path = requesting.0;
         let hash = requesting.1;
-        
-        match self.requesting.get(&path){
-            Some(found_hash ) => {
-                if &hash != found_hash{ // Needs to be overwritten as hash to search for has change
+
+        match self.requesting.get(&path) {
+            Some(found_hash) => {
+                if &hash != found_hash {
+                    // Needs to be overwritten as hash to search for has change
                     println!("Warning: New request does not match previously stored hash");
                     // @todo: Figure out how I want to implement this case, isn't super pressing at the moment
                 }
-            },
-            None => { // This is not yet registered
+            }
+            None => {
+                // This is not yet registered
                 self.requesting.insert(path.clone(), hash.clone());
-                self.receiving_builders.insert(path.clone(), file_builder::FileBuilder::new());
-            },
-        }        
+                self.receiving_builders
+                    .insert(path.clone(), file_builder::FileBuilder::new());
+            }
+        }
     }
 }

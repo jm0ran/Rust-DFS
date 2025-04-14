@@ -8,11 +8,11 @@ use std::{
 
 #[derive(Debug, PartialEq)]
 enum DiscoveryReadState {
-    INITIAL,
-    ADDRESS,
-    DISTRIBUTING,
-    REQUESTING,
-    COMPLETE,
+    Initial,
+    Address,
+    Distributing,
+    Requesting,
+    Complete,
 }
 
 // This is the port that the server will listen on for incoming requests
@@ -90,51 +90,51 @@ fn handle_client(mut stream: TcpStream) {
         .collect();
 
     // Process data into our Vectors
-    let mut read_state = DiscoveryReadState::INITIAL;
+    let mut read_state = DiscoveryReadState::Initial;
     for line in data {
         match read_state {
-            DiscoveryReadState::INITIAL => {
+            DiscoveryReadState::Initial => {
                 // Todo: Check state of request header to ensure protocol is correct, for now assume it is and more on
                 if line.starts_with("#S") {
-                    read_state = DiscoveryReadState::ADDRESS;
+                    read_state = DiscoveryReadState::Address;
                 }
                 continue;
             }
-            DiscoveryReadState::ADDRESS => {
+            DiscoveryReadState::Address => {
                 if line.starts_with("#A") {
                     // Parse out the address
                     address.push_str(line.split_at(3).1);
-                    read_state = DiscoveryReadState::DISTRIBUTING;
+                    read_state = DiscoveryReadState::Distributing;
                 }
                 continue;
             }
-            DiscoveryReadState::DISTRIBUTING => {
+            DiscoveryReadState::Distributing => {
                 if line == "#D" {
                     // We don't need to capture this line
                     continue;
                 }
                 if line == "#R" {
-                    read_state = DiscoveryReadState::REQUESTING;
+                    read_state = DiscoveryReadState::Requesting;
                 } else {
                     distributing.push(line.clone());
                 }
                 continue;
             }
-            DiscoveryReadState::REQUESTING => {
+            DiscoveryReadState::Requesting => {
                 if line == "#E" {
-                    read_state = DiscoveryReadState::COMPLETE;
+                    read_state = DiscoveryReadState::Complete;
                 } else {
                     requesting.push(line.clone());
                 }
                 continue;
             }
-            DiscoveryReadState::COMPLETE => {
+            DiscoveryReadState::Complete => {
                 continue;
             }
         }
     }
 
-    if read_state != DiscoveryReadState::COMPLETE {
+    if read_state != DiscoveryReadState::Complete {
         panic!("Stream read state did not reach COMPLETE state");
     }
 

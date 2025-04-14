@@ -6,13 +6,13 @@ enum FileStatus {
     AwaitingDistributor,
     AwaitingSize,
     InProgress,
-    Complete
+    Complete,
 }
 
 enum BlockState {
     Waiting,
     InProgress,
-    Complete
+    Complete,
 }
 pub struct FileBuilder {
     size: Option<i64>, // Size of target file, will need to request this from the other client, will not be set until size of file is known
@@ -21,11 +21,11 @@ pub struct FileBuilder {
 }
 
 impl FileBuilder {
-    pub fn new() -> FileBuilder{
-        FileBuilder{
+    pub fn new() -> FileBuilder {
+        FileBuilder {
             size: None,
             blocks_complete: None,
-            currently_downloading: 0
+            currently_downloading: 0,
         }
     }
 }

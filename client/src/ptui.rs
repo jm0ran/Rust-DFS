@@ -5,9 +5,9 @@ use std::io::{self, Write};
 use std::str::Split;
 
 pub mod config;
+pub mod file_builder;
 pub mod file_ops;
 pub mod linker_comm;
-pub mod file_builder;
 
 mod file_manager;
 mod linker;
@@ -63,11 +63,11 @@ fn linker_cmd(mut line_parts: Split<'_, &str>) {
                     println!("Linker Updated Successfully"); // TODO: Determine if I even want to print for positive output
                 }
             }
-        },
+        }
         "debug" => {
             let lock = linker.read().unwrap();
             lock.debug();
-        },
+        }
         _ => {
             println!("Unrecognized Linker Argument: {}", arg_1);
         }

@@ -62,7 +62,7 @@ impl Linker {
             distributing = lock.get_distributing_hashes();
             requesting = lock.get_requesting_hashes();
         }
-        
+
         let request = linker_comm::construct_request(
             &distributing,
             &requesting,
@@ -83,7 +83,7 @@ impl Linker {
     /**
      * Debug function to see values in the linker
      */
-    pub fn debug(&self){
+    pub fn debug(&self) {
         println!("{:?}", self.distributors);
     }
 }
