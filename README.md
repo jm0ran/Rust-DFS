@@ -1,6 +1,14 @@
 # Rust Distributed File Sharing
 ## Pre-Shared File
-This program is designed so that at the minimum a client must have the SHA3-512 file hash of the file they are requesting in addition to the file path being targeted. Additionally, the program should have the address of a linking server to query for clients who are distributing their requested files and to broadcast the files they are distributing.
+This program is designed to accept a shared file that has the following information. The SHA3-512 hash of the requested file. The block size that the file will be downloaded in, this block size should be shared between clients and the linking server. The file should then contain the hashes of each block. The final block is unique as it may not be full, as a result the associated line will also include the size of the block. The pre-shared file is essentially a text file and will take the following form:
+
+```
+#S [Block Size] [Requested File Hash]
+[Complete Block Hash 1]
+[Complete Block Hash 2]
+[...]
+#E [Final Block Size] [Final Block Hash]
+```
 
 ## Client Commands
 ### General

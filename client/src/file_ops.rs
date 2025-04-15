@@ -1,7 +1,11 @@
+use sha3::digest::typenum::uint::SetBitOut;
 use sha3::{Digest, Sha3_512};
 use std::collections::HashMap;
+use std::fmt::format;
 use std::fs::File;
-use std::io::Read;
+use std::io::{Read, Write};
+
+use crate::config;
 
 /**
  * Hashes a given file using Sha3_512
@@ -11,7 +15,7 @@ use std::io::Read;
  */
 pub fn hash_file(path: &str) -> Result<String, std::io::Error> {
     let mut file = File::open(path)?;
-    let mut buffer = vec![0u8; 2 * 1024 * 1024];
+    let mut buffer = vec![0u8; 16 * 1024 * 1024];
     let mut hasher = Sha3_512::new();
 
     loop {
@@ -24,6 +28,16 @@ pub fn hash_file(path: &str) -> Result<String, std::io::Error> {
 
     let result = hasher.finalize();
     return Ok(format!("{:x}", result));
+}
+
+/**
+ * Hash the given buffer, used to generate a torrent file
+ */
+pub fn hash_buffer(buffer: &Vec<u8>) -> String {
+    let mut hasher = Sha3_512::new();
+    hasher.update(buffer);
+    let result = hasher.finalize();
+    return format!("{:x}", result);
 }
 
 /**
@@ -70,4 +84,49 @@ pub fn get_directory_children(path: &str) -> Result<(Vec<String>, Vec<String>), 
     }
 
     return Ok((dirs, files));
+}
+
+/**
+ * Generate an RDFS file mainly made up of primary hash, block size, as well as the number and hash of each block
+ */
+pub fn generate_rdfs_file(input_path: &str, output_path: &str) -> Result<(), std::io::Error> {
+    // Get some initial data from the file's metadata
+    let mut input_file = File::open(input_path)?;
+    let file_size = input_file.metadata()?.len();
+    let full_blocks_num = file_size / config::BLOCK_SIZE;
+    let final_block_size = file_size % config::BLOCK_SIZE;
+
+    // Open a write stream to the output file
+    let mut output_file = File::create(output_path)?;
+
+    // Write the first line of the torrent file
+    let file_hash = hash_file(input_path)?;
+    let line_1 = format!("#S {} {file_hash}\n", config::BLOCK_SIZE);
+    output_file.write(line_1.as_bytes())?;
+
+    // Create a buffer of size BLOCK_SIZE
+    let mut buffer = vec![0u8; config::BLOCK_SIZE as usize];
+
+    // Write Our Completed Block Hashes
+    for i in 0..full_blocks_num {
+        input_file.read_exact(&mut buffer)?;
+        let next_line = format!("{}\n", hash_buffer(&buffer));
+        output_file.write(next_line.as_bytes())?;
+    }
+
+    // Write the size + hash value of the final block, will be 0 if data is split even across the block size
+    buffer = vec![0u8; final_block_size as usize];
+    input_file.read_exact(&mut buffer)?;
+    let final_line = format!("#E {final_block_size} {}\n", hash_buffer(&buffer));
+    output_file.write(final_line.as_bytes())?;
+
+    // Ensure entire file has been read
+    if input_file.read(&mut buffer)? != 0 {
+        return Err(std::io::Error::new(
+            std::io::ErrorKind::UnexpectedEof,
+            "Not all data was read from the file",
+        ));
+    }
+
+    return Ok(());
 }
