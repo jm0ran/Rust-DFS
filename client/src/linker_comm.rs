@@ -4,6 +4,7 @@ use std::io::Read;
 use std::io::Write;
 use std::net::{Shutdown, TcpStream};
 
+#[derive(PartialEq)]
 enum DiscoveryReadState {
     Initial,
     Targets,
@@ -107,6 +108,10 @@ fn process_response(response: String) -> HashMap<String, Vec<String>> {
                 continue; // Do noting for the moment
             }
         }
+    }
+
+    if read_state != DiscoveryReadState::Complete {
+        panic!("Stream read state did not reach Complete State");
     }
 
     return results;

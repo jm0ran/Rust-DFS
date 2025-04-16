@@ -1,3 +1,4 @@
+use std::collections::HashSet;
 /**
  * Plain Text User Interface For The Client
  */
@@ -168,15 +169,32 @@ pub fn run() {
 }
 
 fn main() {
-    if false {
-        {
-            // Temporarily register some requesting hashes because I'm lazy
-            let file_manager = file_manager::FileManager::instance();
-            let mut lock = file_manager.write().unwrap();
-            lock.register_requesting((String::from("./receiving/req-1.txt"), String::from("2dd184b8c84b999a6ccc7ae4da2efc3b3cd455d50a04686caaf90f8f5cd60194c8e0e758947738f1001e01010ddb28e782ed274c966561ba798fe0123f495b5d")));
-        }
-        run();
-    }
+    // Temporarily register some requesting hashes because I'm lazy
+    // let file_manager = file_manager::FileManager::instance();
+    // let mut lock = file_manager.write().unwrap();
+    // lock.register_requesting((String::from("./receiving/req-1.txt"), String::from("2dd184b8c84b999a6ccc7ae4da2efc3b3cd455d50a04686caaf90f8f5cd60194c8e0e758947738f1001e01010ddb28e782ed274c966561ba798fe0123f495b5d")));
 
-    let _ = file_ops::generate_rdfs_file("./distributing/temp.txt", "./out.txt");
+    // Start PTUI Thread
+    let ptui_thread = std::thread::spawn(|| {
+        run();
+    });
+
+    // Start File Distribution Thread
+    let file_distributor_thread = std::thread::spawn(|| {
+        file_distributor::start_server();
+    });
+    
+    // Send a simple request to itself to test
+    let testing_thread = std::thread::spawn(|| {
+        std::thread::sleep(std::time::Duration::from_millis(200));
+        println!("Testing thread started");
+        let mut builder = file_builder::FileBuilder::new(String::from("./out.txt"), String::from("./out2.txt"), 56, String::from("744bad55da76b55d0f15c7b9ae4161cc39da805f151d5e609a639349e1a306696cd80c3dcb71a463ca8196bfd7f2a4a70e9664191ea7c5694a5cd8ca424d347c"));
+        let mut distributors: HashSet<String> = HashSet::new();
+        distributors.insert(String::from("127.0.0.1:8802"));
+        builder.add_distributors(distributors);
+        builder.start_next_block();
+    });
+
+    ptui_thread.join().unwrap();
+    file_distributor_thread.join().unwrap();
 }

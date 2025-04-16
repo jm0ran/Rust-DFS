@@ -1,7 +1,5 @@
-use sha3::digest::typenum::uint::SetBitOut;
 use sha3::{Digest, Sha3_512};
 use std::collections::HashMap;
-use std::fmt::format;
 use std::fs::File;
 use std::io::{Read, Write};
 
@@ -101,14 +99,14 @@ pub fn generate_rdfs_file(input_path: &str, output_path: &str) -> Result<(), std
 
     // Write the first line of the torrent file
     let file_hash = hash_file(input_path)?;
-    let line_1 = format!("#S {} {file_hash}\n", config::BLOCK_SIZE);
+    let line_1 = format!("#S {} {file_size} {file_hash}\n", config::BLOCK_SIZE);
     output_file.write(line_1.as_bytes())?;
 
     // Create a buffer of size BLOCK_SIZE
     let mut buffer = vec![0u8; config::BLOCK_SIZE as usize];
 
     // Write Our Completed Block Hashes
-    for i in 0..full_blocks_num {
+    for _ in 0..full_blocks_num {
         input_file.read_exact(&mut buffer)?;
         let next_line = format!("{}\n", hash_buffer(&buffer));
         output_file.write(next_line.as_bytes())?;

@@ -82,23 +82,27 @@ impl FileManager {
      * @param requesting: Tuple of (file_path, file_hash)
      */
     pub fn register_requesting(&mut self, requesting: (String, String)) {
-        let path = requesting.0;
-        let hash = requesting.1;
+        // Want to rework this to process request files
+        return;
+        todo!("Not currently implemented");
 
-        match self.requesting.get(&path) {
-            Some(found_hash) => {
-                if &hash != found_hash {
-                    // Needs to be overwritten as hash to search for has change
-                    println!("Warning: New request does not match previously stored hash");
-                    // @todo: Figure out how I want to implement this case, isn't super pressing at the moment
-                }
-            }
-            None => {
-                // This is not yet registered
-                self.requesting.insert(path.clone(), hash.clone());
-                self.receiving_builders
-                    .insert(path.clone(), file_builder::FileBuilder::new());
-            }
-        }
+        // let path = requesting.0;
+        // let hash = requesting.1;
+
+        // match self.requesting.get(&path) {
+        //     Some(found_hash) => {
+        //         if &hash != found_hash {
+        //             // Needs to be overwritten as hash to search for has change
+        //             println!("Warning: New request does not match previously stored hash");
+        //             // @todo: Figure out how I want to implement this case, isn't super pressing at the moment
+        //         }
+        //     }
+        //     None => {
+        //         // This is not yet registered
+        //         self.requesting.insert(path.clone(), hash.clone());
+        //         self.receiving_builders
+        //             .insert(path.clone(), file_builder::FileBuilder::new(hash));
+        //     }
+        // }
     }
 }
