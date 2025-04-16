@@ -3,7 +3,7 @@ use std::collections::HashMap;
 use std::fs::File;
 use std::io::{Read, Write};
 
-use crate::config;
+use crate::config::{self};
 
 /**
  * Hashes a given file using Sha3_512
@@ -82,6 +82,30 @@ pub fn get_directory_children(path: &str) -> Result<(Vec<String>, Vec<String>), 
     }
 
     return Ok((dirs, files));
+}
+
+/**
+ * Receive a specific block from a file
+ * @return Result resolving to a buffer
+ */
+pub fn get_block(file_path: String, block_num: u64) -> Result<Vec<u8>, std::io::Error> {
+    let mut file = File::open(file_path)?;
+    let file_size = file.metadata()?.len();
+    let is_final_block: bool = ((block_num + 1) * config::BLOCK_SIZE) > file_size
+        || ((block_num + 1) * config::BLOCK_SIZE) == file_size;
+
+    let mut buffer: Vec<u8>;
+    match is_final_block {
+        true => {
+            buffer = Vec::new();
+            file.read_to_end(&mut buffer)?;
+        }
+        false => {
+            buffer = vec![0u8; config::BLOCK_SIZE as usize];
+            file.read_exact(&mut buffer)?;
+        }
+    }
+    return Ok(buffer);
 }
 
 /**

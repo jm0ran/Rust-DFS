@@ -84,7 +84,7 @@ The first line is identical to our other requests the only difference being the 
 Looking at our response, if the request is successful, it will take the following form:
 ```
 #S RDFS 0.1 BLOCK_REQUEST 1600
-#D
+#D [Data Size (useful for final block)]
 [RAW BITES OF BLOCK SIZE]
 #E
 ```

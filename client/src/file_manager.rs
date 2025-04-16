@@ -78,6 +78,20 @@ impl FileManager {
     }
 
     /**
+     * Given a hash return the associated file path to read from
+     */
+    pub fn get_path_from_hash(&self, target_hash: &str) -> String {
+        // @todo: Should probably improve this from linear complexity
+        for entry in &self.distributing {
+            let (path, hash) = entry;
+            if (hash == target_hash) {
+                return path.clone();
+            }
+        }
+        return String::from("");
+    }
+
+    /**
      * Register files to request
      * @param requesting: Tuple of (file_path, file_hash)
      */

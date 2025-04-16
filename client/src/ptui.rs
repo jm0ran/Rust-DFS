@@ -183,7 +183,12 @@ fn main() {
     let file_distributor_thread = std::thread::spawn(|| {
         file_distributor::start_server();
     });
-    
+
+    let _ = file_manager::FileManager::instance()
+        .write()
+        .unwrap()
+        .scan_distributing();
+
     // Send a simple request to itself to test
     let testing_thread = std::thread::spawn(|| {
         std::thread::sleep(std::time::Duration::from_millis(200));
@@ -197,4 +202,5 @@ fn main() {
 
     ptui_thread.join().unwrap();
     file_distributor_thread.join().unwrap();
+    testing_thread.join().unwrap();
 }
