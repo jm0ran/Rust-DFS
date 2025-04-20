@@ -1,7 +1,7 @@
 use sha3::{Digest, Sha3_512};
 use std::collections::HashMap;
 use std::fs::File;
-use std::io::{Read, Write};
+use std::io::{Read, Seek, Write};
 
 use crate::config::{self};
 
@@ -93,6 +93,8 @@ pub fn get_block(file_path: String, block_num: u64) -> Result<Vec<u8>, std::io::
     let file_size = file.metadata()?.len();
     let is_final_block: bool = ((block_num + 1) * config::BLOCK_SIZE) > file_size
         || ((block_num + 1) * config::BLOCK_SIZE) == file_size;
+    // Seek to starting byte
+    file.seek(std::io::SeekFrom::Start(block_num * config::BLOCK_SIZE))?;
 
     let mut buffer: Vec<u8>;
     match is_final_block {
@@ -150,5 +152,37 @@ pub fn generate_rdfs_file(input_path: &str, output_path: &str) -> Result<(), std
         ));
     }
 
+    println!("RDFS File Generated: {output_path}");
+
     return Ok(());
+}
+
+/**
+ * Zero out a file at a given path with the specified size
+ * @param path: &str - The path to the file
+ * @param size: u64 - The size of the file to create
+ * @return Result<(), std::io::Error> - Result indicating success or failure
+ */
+pub fn reserve_file_space(path: &str, size: u64) -> Result<(), std::io::Error> {
+    let file = File::create(path)?;
+    file.set_len(size)?;
+    Ok(())
+}
+
+/**
+ * Write a block to a file at a given path
+ * @param path: &str - The path to the file
+ * @param block_num: u64 - The block number to write
+ * @param data: &[u8] - The data to write
+ * @return Result<(), std::io::Error> - Result indicating success or failure
+ */
+pub fn write_block(path: &str, block_num: u64, data: Vec<u8>) -> Result<(), std::io::Error> {
+    let mut file = File::options().write(true).open(path)?;
+    file.seek(std::io::SeekFrom::Start(block_num * config::BLOCK_SIZE))?;
+    println!(
+        "Block {block_num} starts at {}",
+        block_num * config::BLOCK_SIZE
+    );
+    file.write_all(&data)?;
+    Ok(())
 }

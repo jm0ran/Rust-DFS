@@ -88,6 +88,7 @@ fn handle_client(mut stream: TcpStream) {
         stream.write_all(&part).unwrap();
     }
 
+    // Shutdown the stream, indicating that we are done writing
     stream.shutdown(Shutdown::Write).unwrap();
     println!("File Distribution Processed a successful connection");
 }

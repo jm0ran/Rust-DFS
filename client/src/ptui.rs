@@ -191,13 +191,20 @@ fn main() {
 
     // Send a simple request to itself to test
     let testing_thread = std::thread::spawn(|| {
+        // [Generate] Request Object Testing
+        // file_ops::generate_rdfs_file(
+        //     "./distributing/big.7z",
+        //     "./receiving/big-received.7z",
+        // )
+
+        // [Download Testing]
         std::thread::sleep(std::time::Duration::from_millis(200));
         println!("Testing thread started");
-        let mut builder = file_builder::FileBuilder::new(String::from("./out.txt"), String::from("./out2.txt"), 56, String::from("744bad55da76b55d0f15c7b9ae4161cc39da805f151d5e609a639349e1a306696cd80c3dcb71a463ca8196bfd7f2a4a70e9664191ea7c5694a5cd8ca424d347c"));
+        let builder = file_builder::FileBuilder::new(String::from("./out.txt"), String::from("./receiving/big-received.7z"), 125444265, String::from("b361afad35d0e7b6965bce0acb338e3b8bcdf39048930dec5b4b9b535d40cc286a8715483ffc01a9fc418b4e64c377c911f9901df18b9817e02fc2a719cabebf"));
         let mut distributors: HashSet<String> = HashSet::new();
         distributors.insert(String::from("127.0.0.1:8802"));
-        builder.add_distributors(distributors);
-        builder.start_next_block();
+        builder.write().unwrap().add_distributors(distributors);
+        builder.write().unwrap().start_next_block();
     });
 
     ptui_thread.join().unwrap();

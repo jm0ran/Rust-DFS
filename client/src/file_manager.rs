@@ -84,7 +84,7 @@ impl FileManager {
         // @todo: Should probably improve this from linear complexity
         for entry in &self.distributing {
             let (path, hash) = entry;
-            if (hash == target_hash) {
+            if hash == target_hash {
                 return path.clone();
             }
         }
