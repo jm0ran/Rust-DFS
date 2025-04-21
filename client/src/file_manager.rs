@@ -182,7 +182,6 @@ impl FileManager {
         output_path = &output_path[..output_path.len() - 5];
 
         let file_builder = FileBuilder::new(
-            request_path.clone(),
             String::from(output_path),
             file_size,
             String::from(file_hash),

@@ -4,6 +4,7 @@
 use std::io::{self, Write};
 use std::str::Split;
 
+// These are defined here so rust components can see everything
 pub mod config;
 pub mod file_builder;
 pub mod file_distributor;
@@ -145,7 +146,7 @@ fn file_cmd(mut line_parts: Split<'_, &str>) {
                         .unwrap()
                         .register_requesting(String::from(file_path))
                     {
-                        Ok((_)) => {
+                        Ok(_) => {
                             println!("Successfully registered the requesting file");
                         }
                         Err(err) => {
@@ -171,7 +172,7 @@ fn file_cmd(mut line_parts: Split<'_, &str>) {
 /**
  * Process input and pass to the appropriate command
  */
-pub fn process_input(line: &str) {
+fn process_input(line: &str) {
     let mut line_parts = line.split(" ");
     if line_parts.clone().count() < 1 {
         // If we do not have an initial command

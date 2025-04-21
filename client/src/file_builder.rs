@@ -28,7 +28,6 @@ enum BlockState {
  * @todo Going to need some big thought behind how I want to synchronize this, not going to stress too much right at this moment
  */
 pub struct FileBuilder {
-    request_file_path: String,
     output_file_path: String,
     block_states: Vec<BlockState>,
     file_hash: String,
@@ -46,7 +45,6 @@ impl FileBuilder {
      * Construct a new file builder,
      */
     pub fn new(
-        request_file_path: String,
         output_file_path: String,
         size: u64,
         file_hash: String,
@@ -58,7 +56,6 @@ impl FileBuilder {
         let _ = file_ops::reserve_file_space(&output_file_path, size).unwrap();
 
         let builder = FileBuilder {
-            request_file_path,
             output_file_path,
             block_states: vec![BlockState::Waiting; total_blocks as usize],
             file_hash,
