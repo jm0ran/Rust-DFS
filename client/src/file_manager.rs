@@ -1,10 +1,14 @@
 use std::{
     collections::{HashMap, HashSet},
-    io,
+    path::Path,
     sync::{Arc, OnceLock, RwLock},
 };
 
-use crate::{config, file_builder, file_ops};
+use crate::{
+    config,
+    file_builder::{self, FileBuilder},
+    file_ops,
+};
 
 static INSTANCE: OnceLock<RwLock<FileManager>> = OnceLock::new();
 
@@ -94,11 +98,16 @@ impl FileManager {
 
     /**
      * Register files to request, will only register if this file is not already in the requesting list
-     * @param requesting: Tuple of (file_path, file_hash)
+     * @param Request path
      */
     pub fn register_requesting(&mut self, request_path: String) -> Result<(), std::io::Error> {
         // Check if the file is already in the requesting list
-        println!("IMPLEMENT CHECK IF FILE IS ALREADY IN REQUESTING LIST");
+        if self.requesting.contains_key(&request_path) {
+            return Err(std::io::Error::new(
+                std::io::ErrorKind::AlreadyExists,
+                "File is already in the requesting list",
+            ));
+        }
 
         // Get lines from request file and process
         let mut lines = file_ops::get_raw_lines(&request_path)?;
@@ -125,14 +134,14 @@ impl FileManager {
                     "Failed to parse file size from request file",
                 )
             })?;
-        let mut file_hash = line_parts.next().ok_or(std::io::Error::new(
+        let file_hash = line_parts.next().ok_or(std::io::Error::new(
             std::io::ErrorKind::Other,
             "Failed to read file hash from request file",
         ))?;
 
         // Read files blocks
-        let blocks = 0;
-        let mut next_line = String::new();
+        let mut hashes: Vec<String> = Vec::new();
+        let mut next_line;
         let mut remaining = true;
         while remaining {
             next_line = lines.pop().ok_or(std::io::Error::new(
@@ -144,13 +153,42 @@ impl FileManager {
             match next_line.starts_with("#E") {
                 true => {
                     remaining = false;
-                    println!("Final Line: {}", next_line);
+                    let mut parts = next_line.split(" ");
+                    parts.next(); // We don't care about first piece
+                    let hash = String::from(parts.next().ok_or(std::io::Error::new(
+                        std::io::ErrorKind::Other,
+                        "Failed to extract hash from the final line",
+                    ))?);
+                    hashes.push(hash);
                 }
                 false => {
-                    println!("Next Line: {}", next_line);
+                    hashes.push(next_line);
                 }
             }
         }
+
+        // Prep output file path name
+        let mut output_path = Path::new(&request_path)
+            .file_name()
+            .ok_or(std::io::Error::new(
+                std::io::ErrorKind::Other,
+                "Could not convert request path string to path",
+            ))?
+            .to_str()
+            .ok_or(std::io::Error::new(
+                std::io::ErrorKind::Other,
+                "Could not get filename from request file path",
+            ))?;
+        output_path = &output_path[..output_path.len() - 5];
+
+        let file_builder = FileBuilder::new(
+            request_path.clone(),
+            String::from(output_path),
+            file_size,
+            String::from(file_hash),
+        );
+        file_builder.write().unwrap().start_next_block();
+        self.receiving_builders.insert(request_path, file_builder);
 
         return Ok(());
     }

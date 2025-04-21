@@ -101,6 +101,7 @@ impl FileBuilder {
     pub fn start_next_block(&mut self) {
         if !(self.distributors_available.len() > 0) {
             // If there are no distributors available do not start the next block
+            println!("No Distributors Available");
             return;
         }
         for i in 0..self.block_states.len() {
