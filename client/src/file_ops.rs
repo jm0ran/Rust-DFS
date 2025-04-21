@@ -1,7 +1,7 @@
 use sha3::{Digest, Sha3_512};
-use std::collections::HashMap;
+use std::collections::{HashMap, VecDeque};
 use std::fs::File;
-use std::io::{Read, Seek, Write};
+use std::io::{BufRead, Read, Seek, Write};
 
 use crate::config::{self};
 
@@ -113,15 +113,28 @@ pub fn get_block(file_path: String, block_num: u64) -> Result<Vec<u8>, std::io::
 /**
  * Generate an RDFS file mainly made up of primary hash, block size, as well as the number and hash of each block
  */
-pub fn generate_rdfs_file(input_path: &str, output_path: &str) -> Result<(), std::io::Error> {
+pub fn generate_rdfs_file(input_path: &str) -> Result<String, std::io::Error> {
     // Get some initial data from the file's metadata
-    let mut input_file = File::open(input_path)?;
+    let path = std::path::Path::new(input_path);
+    let mut input_file = File::open(path)?;
     let file_size = input_file.metadata()?.len();
     let full_blocks_num = file_size / config::BLOCK_SIZE;
     let final_block_size = file_size % config::BLOCK_SIZE;
+    let file_name = path
+        .file_name()
+        .ok_or(std::io::Error::new(
+            std::io::ErrorKind::Other,
+            "Could not find file name",
+        ))?
+        .to_str()
+        .ok_or(std::io::Error::new(
+            std::io::ErrorKind::Other,
+            "Could not convert file name to string",
+        ))?;
+    let output_path = format!("./generated/{}.rdfs", file_name);
 
     // Open a write stream to the output file
-    let mut output_file = File::create(output_path)?;
+    let mut output_file = File::create(output_path.clone())?;
 
     // Write the first line of the torrent file
     let file_hash = hash_file(input_path)?;
@@ -152,9 +165,7 @@ pub fn generate_rdfs_file(input_path: &str, output_path: &str) -> Result<(), std
         ));
     }
 
-    println!("RDFS File Generated: {output_path}");
-
-    return Ok(());
+    return Ok(output_path);
 }
 
 /**
@@ -185,4 +196,22 @@ pub fn write_block(path: &str, block_num: u64, data: Vec<u8>) -> Result<(), std:
     );
     file.write_all(&data)?;
     Ok(())
+}
+
+/**
+ * Return vector of lines from the file path provided
+ * @return Vec<String> - Vector of lines from the file
+ */
+pub fn get_raw_lines(file_path: &str) -> Result<Vec<String>, std::io::Error> {
+    let mut lines: VecDeque<String> = VecDeque::new();
+    let file = File::open(file_path)?;
+    let mut reader = std::io::BufReader::new(file);
+    let mut line = String::new();
+    let mut result = reader.read_line(&mut line)?;
+    while result > 0 {
+        lines.push_front(line.clone());
+        line.clear();
+        result = reader.read_line(&mut line)?;
+    }
+    return Ok(Vec::from(lines));
 }

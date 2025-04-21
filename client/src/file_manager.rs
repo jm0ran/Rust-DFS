@@ -1,6 +1,7 @@
 use std::{
     collections::{HashMap, HashSet},
-    sync::{OnceLock, RwLock},
+    io,
+    sync::{Arc, OnceLock, RwLock},
 };
 
 use crate::{config, file_builder, file_ops};
@@ -10,7 +11,7 @@ static INSTANCE: OnceLock<RwLock<FileManager>> = OnceLock::new();
 pub struct FileManager {
     distributing: HashMap<String, String>, //Hash map of file path to file hash
     requesting: HashMap<String, String>,   // Hash map of file path to file hash
-    receiving_builders: HashMap<String, file_builder::FileBuilder>,
+    receiving_builders: HashMap<String, Arc<RwLock<file_builder::FileBuilder>>>, // Hash map of output path to file builder RW locks
 }
 
 impl FileManager {
@@ -92,31 +93,65 @@ impl FileManager {
     }
 
     /**
-     * Register files to request
+     * Register files to request, will only register if this file is not already in the requesting list
      * @param requesting: Tuple of (file_path, file_hash)
      */
-    pub fn register_requesting(&mut self, requesting: (String, String)) {
-        // Want to rework this to process request files
-        return;
-        todo!("Not currently implemented");
+    pub fn register_requesting(&mut self, request_path: String) -> Result<(), std::io::Error> {
+        // Check if the file is already in the requesting list
+        println!("IMPLEMENT CHECK IF FILE IS ALREADY IN REQUESTING LIST");
 
-        // let path = requesting.0;
-        // let hash = requesting.1;
+        // Get lines from request file and process
+        let mut lines = file_ops::get_raw_lines(&request_path)?;
 
-        // match self.requesting.get(&path) {
-        //     Some(found_hash) => {
-        //         if &hash != found_hash {
-        //             // Needs to be overwritten as hash to search for has change
-        //             println!("Warning: New request does not match previously stored hash");
-        //             // @todo: Figure out how I want to implement this case, isn't super pressing at the moment
-        //         }
-        //     }
-        //     None => {
-        //         // This is not yet registered
-        //         self.requesting.insert(path.clone(), hash.clone());
-        //         self.receiving_builders
-        //             .insert(path.clone(), file_builder::FileBuilder::new(hash));
-        //     }
-        // }
+        // Process First Line
+        let mut first_line = lines.pop().ok_or(std::io::Error::new(
+            std::io::ErrorKind::Other,
+            "Failed to read first line from request file",
+        ))?;
+        first_line = first_line.trim().to_string(); // Remove any whitespace
+        let mut line_parts = first_line.split(" ");
+        line_parts.next(); // Skip the Line identifier
+        line_parts.next(); // Skip the block size, for now...
+        let file_size: u64 = line_parts
+            .next()
+            .ok_or(std::io::Error::new(
+                std::io::ErrorKind::Other,
+                "Failed to read file size from request file",
+            ))?
+            .parse()
+            .map_err(|_| {
+                std::io::Error::new(
+                    std::io::ErrorKind::Other,
+                    "Failed to parse file size from request file",
+                )
+            })?;
+        let mut file_hash = line_parts.next().ok_or(std::io::Error::new(
+            std::io::ErrorKind::Other,
+            "Failed to read file hash from request file",
+        ))?;
+
+        // Read files blocks
+        let blocks = 0;
+        let mut next_line = String::new();
+        let mut remaining = true;
+        while remaining {
+            next_line = lines.pop().ok_or(std::io::Error::new(
+                std::io::ErrorKind::Other,
+                "Request file did not terminate with #E",
+            ))?;
+            next_line = next_line.trim().to_string();
+            remaining = !next_line.starts_with("#E");
+            match next_line.starts_with("#E") {
+                true => {
+                    remaining = false;
+                    println!("Final Line: {}", next_line);
+                }
+                false => {
+                    println!("Next Line: {}", next_line);
+                }
+            }
+        }
+
+        return Ok(());
     }
 }

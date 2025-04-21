@@ -1,4 +1,3 @@
-use std::collections::HashSet;
 /**
  * Plain Text User Interface For The Client
  */
@@ -114,6 +113,55 @@ fn file_cmd(mut line_parts: Split<'_, &str>) {
                 println!("\t{} : {}", entry.0, entry.1);
             }
         }
+        "generate" => {
+            match line_parts.next() {
+                Some(mut file_path) => {
+                    file_path = file_path.trim(); // Remove any whitespace
+                    println!("Attempting to generate RDFS File: {}", file_path);
+                    match file_ops::generate_rdfs_file(file_path) {
+                        Ok(output_path) => {
+                            println!("RDFS File Generated: {}", output_path);
+                        }
+                        Err(err) => {
+                            println!("Encountered an error when generating RDFS file: {}. Please ensure that this file exists", err);
+                        }
+                    };
+                }
+                None => {
+                    println!("Did not provide a file path to generate an RDFS file");
+                    return;
+                }
+            }
+        }
+        "register" => {
+            match line_parts.next() {
+                Some(mut file_path) => {
+                    // Call the file manager to register the request
+                    file_path = file_path.trim(); // Remove any whitespace
+
+                    //Attempt to read and register the rdfs file
+                    match file_manager::FileManager::instance()
+                        .write()
+                        .unwrap()
+                        .register_requesting(String::from(file_path))
+                    {
+                        Ok((_)) => {
+                            println!("Successfully registered the requesting file");
+                        }
+                        Err(err) => {
+                            println!(
+                                "Encountered an error registering the requesting file: {}",
+                                err
+                            );
+                        }
+                    }
+                }
+                None => {
+                    println!("Did not provide a file path to request");
+                    return;
+                }
+            }
+        }
         _ => {
             println!("Unrecognized Files Argument: {}", arg_1);
         }
@@ -198,13 +246,13 @@ fn main() {
         // )
 
         // [Download Testing]
-        std::thread::sleep(std::time::Duration::from_millis(200));
-        println!("Testing thread started");
-        let builder = file_builder::FileBuilder::new(String::from("./out.txt"), String::from("./receiving/big-received.7z"), 125444265, String::from("b361afad35d0e7b6965bce0acb338e3b8bcdf39048930dec5b4b9b535d40cc286a8715483ffc01a9fc418b4e64c377c911f9901df18b9817e02fc2a719cabebf"));
-        let mut distributors: HashSet<String> = HashSet::new();
-        distributors.insert(String::from("127.0.0.1:8802"));
-        builder.write().unwrap().add_distributors(distributors);
-        builder.write().unwrap().start_next_block();
+        // std::thread::sleep(std::time::Duration::from_millis(200));
+        // println!("Testing thread started");
+        // let builder = file_builder::FileBuilder::new(String::from("./out.txt"), String::from("./receiving/big-received.7z"), 125444265, String::from("b361afad35d0e7b6965bce0acb338e3b8bcdf39048930dec5b4b9b535d40cc286a8715483ffc01a9fc418b4e64c377c911f9901df18b9817e02fc2a719cabebf"));
+        // let mut distributors: HashSet<String> = HashSet::new();
+        // distributors.insert(String::from("127.0.0.1:8802"));
+        // builder.write().unwrap().add_distributors(distributors);
+        // builder.write().unwrap().start_next_block();
     });
 
     ptui_thread.join().unwrap();
