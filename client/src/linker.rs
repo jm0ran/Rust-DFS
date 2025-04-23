@@ -11,7 +11,7 @@ static INSTANCE: OnceLock<RwLock<Linker>> = OnceLock::new();
 
 pub struct Linker {
     target: String,
-    distributors: HashMap<String, Vec<String>>,
+    distributors: HashMap<String, HashSet<String>>,
 }
 
 impl Linker {
@@ -77,13 +77,41 @@ impl Linker {
             }
         }
 
+        // Send distribution information to file manager
+        self.send_distributors();
+
         return None;
+    }
+
+    /**
+     * Send distributors to file_manager to be distributed across the builders, we don't want to request the distributors from the file manager as this could result in deadlock
+     */
+    fn send_distributors(&self) {
+        // Get the file manager
+        let file_manager = file_manager::FileManager::instance();
+        // Get a write lock on the file manager
+        let mut lock = file_manager.write().unwrap();
+        // Send the distributors to the file manager
+        lock.set_distributors(self.distributors.clone());
     }
 
     /**
      * Debug function to see values in the linker
      */
     pub fn debug(&self) {
-        println!("{:?}", self.distributors);
+        println!("Distributors:\n{:?}", self.distributors);
+        // Get requesting and distributing from file manager
+        let distributing: HashSet<String>;
+        let requesting: HashSet<String>;
+        {
+            let file_manager = file_manager::FileManager::instance();
+            let lock = file_manager.read().unwrap();
+            distributing = lock.get_distributing_hashes();
+            requesting = lock.get_requesting_hashes();
+        }
+        println!(
+            "Distributing: {:?}\nRequesting: {:?}",
+            distributing, requesting
+        );
     }
 }

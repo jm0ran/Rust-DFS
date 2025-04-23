@@ -15,7 +15,7 @@ static INSTANCE: OnceLock<RwLock<FileManager>> = OnceLock::new();
 pub struct FileManager {
     distributing: HashMap<String, String>, //Hash map of file path to file hash
     requesting: HashMap<String, String>,   // Hash map of file path to file hash
-    receiving_builders: HashMap<String, Arc<RwLock<file_builder::FileBuilder>>>, // Hash map of output path to file builder RW locks
+    builders: HashMap<String, Arc<RwLock<file_builder::FileBuilder>>>, // Map of hash to builder
 }
 
 impl FileManager {
@@ -26,7 +26,7 @@ impl FileManager {
         FileManager {
             distributing: HashMap::new(),
             requesting: HashMap::new(),
-            receiving_builders: HashMap::new(),
+            builders: HashMap::new(),
         }
     }
 
@@ -46,7 +46,6 @@ impl FileManager {
                 return Some(err);
             }
         }
-        //@todo: update the linker
         return None;
     }
 
@@ -180,6 +179,8 @@ impl FileManager {
                 "Could not get filename from request file path",
             ))?;
         output_path = &output_path[..output_path.len() - 5];
+        let formatted_output_path = format!("./receiving/{}", output_path);
+        output_path = &formatted_output_path;
 
         let file_builder = FileBuilder::new(
             String::from(output_path),
@@ -187,8 +188,32 @@ impl FileManager {
             String::from(file_hash),
         );
         file_builder.write().unwrap().start_next_block();
-        self.receiving_builders.insert(request_path, file_builder);
-
+        self.builders.insert(file_hash.to_string(), file_builder);
+        self.requesting
+            .insert(request_path.clone(), file_hash.to_string());
         return Ok(());
+    }
+
+    /**
+     * Called by linker to pass distributors, file manager is responsible for sending them all to the correct file_builder
+     */
+    pub fn set_distributors(&mut self, distributors: HashMap<String, HashSet<String>>) {
+        println!("Set Distributors: {:?}", distributors);
+        for entry in &distributors {
+            let hash = entry.0;
+            let i_distributors = entry.1;
+            if self.builders.contains_key(hash) {
+                let builder = self.builders.get_mut(hash).unwrap();
+                builder
+                    .write()
+                    .unwrap()
+                    .add_distributors(i_distributors.clone());
+                // Start a block for every distributor
+                for _i in 0..i_distributors.len() {
+                    println!("Started a block");
+                    builder.write().unwrap().start_next_block();
+                }
+            }
+        }
     }
 }

@@ -44,11 +44,7 @@ impl FileBuilder {
     /**
      * Construct a new file builder,
      */
-    pub fn new(
-        output_file_path: String,
-        size: u64,
-        file_hash: String,
-    ) -> Arc<RwLock<FileBuilder>> {
+    pub fn new(output_file_path: String, size: u64, file_hash: String) -> Arc<RwLock<FileBuilder>> {
         let total_blocks =
             (size / config::BLOCK_SIZE) + if size % config::BLOCK_SIZE != 0 { 1 } else { 0 };
         // Increment by 1 if non-standard size final block is necessary
@@ -132,9 +128,6 @@ impl FileBuilder {
             println!("File Download Complete");
             return;
         }
-
-        // Start the next block, this will runs synchronously
-        self.start_next_block();
     }
 
     fn spawn_download_thread(&mut self, block_num: u64, distributor: String) {

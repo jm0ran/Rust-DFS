@@ -55,7 +55,7 @@ pub fn construct_request(
 pub fn send_request(
     request: Vec<String>,
     linking_server: &str,
-) -> Result<HashMap<String, Vec<String>>, std::io::Error> {
+) -> Result<HashMap<String, HashSet<String>>, std::io::Error> {
     // Open the stream and send the request
     let mut stream: TcpStream = TcpStream::connect(linking_server)?;
     for line in request {
@@ -78,8 +78,8 @@ pub fn send_request(
  * @param response: response as a string
  * @return results: HashMap of hashes to a list of their providers
  */
-fn process_response(response: String) -> HashMap<String, Vec<String>> {
-    let mut results: HashMap<String, Vec<String>> = HashMap::new();
+fn process_response(response: String) -> HashMap<String, HashSet<String>> {
+    let mut results: HashMap<String, HashSet<String>> = HashMap::new();
 
     let mut read_state = DiscoveryReadState::Initial;
     for line in response.lines() {
@@ -97,9 +97,9 @@ fn process_response(response: String) -> HashMap<String, Vec<String>> {
                 } else {
                     let mut line_parts = line.split(" ");
                     let file_hash: String = String::from(line_parts.next().unwrap());
-                    let mut providers: Vec<String> = Vec::new();
+                    let mut providers: HashSet<String> = HashSet::new();
                     for part in line_parts {
-                        providers.push(String::from(part));
+                        providers.insert(String::from(part));
                     }
                     results.insert(file_hash, providers);
                 }
