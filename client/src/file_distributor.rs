@@ -66,6 +66,8 @@ fn handle_client(mut stream: TcpStream) {
         panic!("File request read state did not reach COMPLETE state");
     }
 
+    println!("Received a request for block {block_num}");
+
     // Get File Path
     let file_path = file_manager::FileManager::instance()
         .read()
@@ -90,7 +92,7 @@ fn handle_client(mut stream: TcpStream) {
 
     // Shutdown the stream, indicating that we are done writing
     stream.shutdown(Shutdown::Write).unwrap();
-    println!("File Distribution Processed a successful connection");
+    println!("Block {block_num} transfer complete");
 }
 
 pub fn start_server() {

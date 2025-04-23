@@ -190,10 +190,6 @@ pub fn reserve_file_space(path: &str, size: u64) -> Result<(), std::io::Error> {
 pub fn write_block(path: &str, block_num: u64, data: Vec<u8>) -> Result<(), std::io::Error> {
     let mut file = File::options().write(true).open(path)?;
     file.seek(std::io::SeekFrom::Start(block_num * config::BLOCK_SIZE))?;
-    println!(
-        "Block {block_num} starts at {}",
-        block_num * config::BLOCK_SIZE
-    );
     file.write_all(&data)?;
     Ok(())
 }

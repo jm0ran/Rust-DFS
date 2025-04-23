@@ -146,7 +146,7 @@ impl FileBuilder {
 
                 let file_buffer = FileBuilder::process_response(&mut stream);
 
-                println!("Block Num: {}", block_num);
+                println!("Requesting Block Num: {} From: {}", block_num, distributor);
                 // Write buffer to file
                 file_ops::write_block(&output_path, block_num, file_buffer).unwrap();
 
