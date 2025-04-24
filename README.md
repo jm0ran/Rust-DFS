@@ -44,6 +44,14 @@ files scan
 ```
 files distributing
 ```
+**Generate**: Generate an RDFS file for distribution. Takes the file path as the argument, relative or absolute, and hashes the entire file as well as each block storing it in ./receiving/[filename].rdfs
+```
+files generate ./example_file.txt
+```
+**Register**: Reads in an rdfs file and registers it with the file manager as well as the linker for distribution. Takes the file path as the argument, relative or absolute
+```
+files register ./example_file.txt.rdfs
+```
 
 ## Protocol
 ### Discovery (Client -> Linking Server)
