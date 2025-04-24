@@ -194,7 +194,7 @@ impl FileBuilder {
         return buffer;
     }
 
-    pub fn create_block_request(&self, block_num: u64) -> Vec<String> {
+    fn create_block_request(&self, block_num: u64) -> Vec<String> {
         let mut request: Vec<String> = Vec::new();
         request.push(format!(
             "#S RDFS 0.1 BLOCK_REQUEST {}\n",
