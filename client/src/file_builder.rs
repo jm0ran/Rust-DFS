@@ -92,7 +92,7 @@ impl FileBuilder {
      * Look for the next block to start
      */
     pub fn start_next_block(&mut self) {
-        if !(self.distributors_available.len() > 0) {
+        if self.distributors_available.len() == 0 {
             // If there are no distributors available do not start the next block
             println!("No Distributors Available");
             return;
@@ -102,8 +102,10 @@ impl FileBuilder {
                 self.block_states[i] = BlockState::InProgress;
                 // Get a distributor
                 let distributor = self.distributors_available.iter().next().cloned().unwrap(); //Already verified there will be a distributor, if it crashes then theres an issue somewhere else
+                self.distributors_available.remove(&distributor);
                 self.distributors_in_use.insert(distributor.clone());
                 self.spawn_download_thread(i as u64, distributor);
+                break;
             }
         }
     }
@@ -127,6 +129,9 @@ impl FileBuilder {
             self.file_status = FileStatus::Complete;
             println!("File Download Complete");
             return;
+        }else{
+            // Start the next block
+            self.start_next_block();
         }
     }
 
