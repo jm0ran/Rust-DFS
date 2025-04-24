@@ -1,5 +1,12 @@
 # Rust Distributed File Sharing 
+Rust DFS is a file distribution application/protocol written in (you guessed it) rust. I wrote this application to learn more about rust, network communication, synchronization, and distributed systems. The application is split into two major components: a linking server and clients. The linking server helps clients discover each other while clients have the ability to both download from and upload to other clients. Data is handled in blocks which are currently each 16MB in size but easily configurable. There is a demo video below that shows some functionality of the system as well as some diagrams showcasing the high-level pieces. Additionally there is documentation on the protocol and the commands that the user can use to control the client.
 ## [Demo Video](https://www.youtube.com/watch?v=K2Y0zqv0KnY)
+## Diagrams
+**High-Level Overview**:
+![High Level System Overview](./diagrams/overview.png)
+
+**Client UML**:
+![Client UML Overview](./diagrams/client-uml.png)
 
 ## Pre-Shared File
 This program is designed to accept a shared file that has the following information. The SHA3-512 hash of the requested file. The block size that the file will be downloaded in, this block size should be shared between clients and the linking server. The file should then contain the hashes of each block. The final block is unique as it may not be full, as a result the associated line will also include the size of the block. The pre-shared file is essentially a text file and will take the following form:
@@ -99,3 +106,6 @@ Looking at our response, if the request is successful, it will take the followin
 #E
 ```
 Note that this is pretty straightforward. We have an identical header and then we have a #D to tell the client that data will follow. The client will read the corresponding block size and then the #E denotes the conclusion of the response.
+
+## Reflection
+When I started this project I had never used rust before, so that was the largest challenge to overcome. Rust has it's own way of doing everything and if you don't do it the rust way, rust isn't going to cooperate. I used the online rust book found [here](https://doc.rust-lang.org/book/) to get up and running and a handle on the basics. I tried to experiment with rust specific features to try to get as much exposure to the language as I could. For asynchronous code and thread safety I did briefly look into specific async runtimes but instead decided I wanted to get a working prototype with just the standard libraries for better or for worse. Overall I'm pretty happy with how it turned out. I wouldn't say it's entirely polished and theres still some things I'd like to work on if I come back to it, but I think it was an enjoyable project to work on and put together.
