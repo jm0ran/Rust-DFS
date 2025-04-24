@@ -1,4 +1,6 @@
-# Rust Distributed File Sharing
+# Rust Distributed File Sharing 
+## [Demo Video](https://www.youtube.com/watch?v=K2Y0zqv0KnY)
+
 ## Pre-Shared File
 This program is designed to accept a shared file that has the following information. The SHA3-512 hash of the requested file. The block size that the file will be downloaded in, this block size should be shared between clients and the linking server. The file should then contain the hashes of each block. The final block is unique as it may not be full, as a result the associated line will also include the size of the block. The pre-shared file is essentially a text file and will take the following form:
 
